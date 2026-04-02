@@ -48,7 +48,6 @@
 
         .status-pill { padding: 20px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 18px; margin: 20px 0; }
         .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
-        .activo { background: #e8f5e9; color: var(--accent); border: 1px solid #a5d6a7; }
         .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
 
         .action-item {
@@ -59,9 +58,14 @@
         .icon-red { background: #ffebee; color: var(--danger); }
         .icon-yellow { background: #fff8e1; color: var(--warning); }
 
-        /* AREA DE PAGO */
+        /* AREA DE PAGO INTERACTIVA */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
-        .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; }
+        
+        /* BLOQUE BONITO DE CUENTAS (RESTAURADO) */
+        .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .bank-card { padding: 12px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; }
+        
+        .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600; }
         .file-upload input { display: none; }
         .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
         #verifying-display { display: none; text-align: center; padding: 30px; background: #fffcf0; border-radius: 12px; border: 1px solid #ffe082; }
@@ -86,10 +90,10 @@
 
         <div class="panel-body">
             <div class="main-grid">
-                <div class="card-box" id="card-status">
+                <div class="card-box" style="border-top: 4px solid var(--danger);">
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido"><i class="fa-solid fa-lock"></i><br>LICENCIA INACTIVA</div>
-                    <p style="text-align: center; font-size: 12px;">Licencia: <b>#SGF-2026</b> | Vence: <b id="fecha-vence">--/--/----</b></p>
+                    <p style="text-align: center; font-size: 12px; color: #777;">Licencia: <b>#SGF-2026</b> | Vence: <b>02/04/2026</b></p>
                 </div>
 
                 <div class="card-box">
@@ -106,8 +110,19 @@
             </div>
 
             <div id="payment-area">
+                <h3 id="pago-titulo" style="margin-top:0; font-size: 15px; color: var(--primary); font-weight: 800; text-transform: uppercase;">Generar Orden de Activación</h3>
+                
+                <div class="bank-info-grid">
+                    <div class="bank-card" style="border-left: 3px solid var(--primary); background: #f8f9ff;">
+                        <strong>PAGO MÓVIL (BS)</strong><br>Mercantil (0105) | V-XXXXXXXX<br>Telf: 04XX-XXXXXXX
+                    </div>
+                    <div class="bank-card" style="border-left: 3px solid #f3ba2f; background: #fffdf0;">
+                        <strong>BINANCE PAY (USDT)</strong><br>ID Merchant: 987654321<br>Usuario: SGF_Cloud_Audit
+                    </div>
+                </div>
+
                 <div id="form-inner">
-                    <select id="metodoPago" onchange="toggleCampos()" style="width:100%; padding:14px; border-radius:8px; margin-bottom:15px;">
+                    <select id="metodoPago" onchange="toggleCampos()" style="width:100%; padding:14px; border-radius:8px; margin-bottom:15px; border: 1px solid #ddd;">
                         <option value="Pago Móvil">Pago Móvil / Transferencia BS</option>
                         <option value="Binance Pay">Binance Pay (USDT)</option>
                         <option value="Efectivo / Acuerdo Directo">Efectivo / Acuerdo Directo</option>
@@ -131,28 +146,19 @@
     </div>
 </div>
 
-<script src="config.js"></script>
 <script>
-    window.onload = function() {
-        const ind = document.getElementById('status-indicator');
-        document.getElementById('fecha-vence').innerText = SGF_CONFIG.vencimiento;
-        if(SGF_CONFIG.status_licencia === "activo") {
-            ind.className = "status-pill activo";
-            ind.innerHTML = '<i class="fa-solid fa-check-double"></i><br>LICENCIA ACTIVA';
-            document.getElementById('card-status').style.borderTop = "4px solid var(--accent)";
-        } else {
-            document.getElementById('card-status').style.borderTop = "4px solid var(--danger)";
-        }
-    }
-
     function validarLogin() {
         if(document.getElementById('userInput').value !== "" && document.getElementById('passInput').value !== "") {
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-        }
+        } else { alert("Acceso denegado."); }
     }
 
-    function abrirPago() { document.getElementById('payment-area').style.display = 'block'; }
+    function abrirPago(t) {
+        document.getElementById('pago-titulo').innerText = t + " Licencia API";
+        document.getElementById('payment-area').style.display = 'block';
+        document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
+    }
     
     function toggleCampos() {
         const esEf = document.getElementById('metodoPago').value === "Efectivo / Acuerdo Directo";
@@ -172,20 +178,21 @@
 
         if(m !== "Efectivo / Acuerdo Directo" && !r) return alert("Falta Referencia");
 
+        // CARGA A CLOUDINARY (INTEGRADA)
         if(m !== "Efectivo / Acuerdo Directo" && f.files[0]) {
             const fd = new FormData();
             fd.append('file', f.files[0]);
-            fd.append('upload_preset', SGF_CONFIG.preset);
+            fd.append('upload_preset', 'ordenes');
             fd.append('public_id', `pago_${id}`);
-            fetch(`https://api.cloudinary.com/v1_1/${SGF_CONFIG.cloud_name}/image/upload`, {
-                method: 'POST', body: fd
-            });
+            // Tu Cloud Name: drxiko8l4
+            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd });
         }
 
         document.getElementById('orden-id').innerText = id;
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
         
+        // Semáforo Amarillo (Conciliando)
         const ind = document.getElementById('status-indicator');
         ind.className = "status-pill proximo";
         ind.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
