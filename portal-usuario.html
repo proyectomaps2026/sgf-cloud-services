@@ -2,90 +2,346 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF CLOUD | PORTAL DE SUSCRIPCIÓN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF CLOUD | Portal de Suscripción Municipal</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg: #f4f7f6; --primary: #1a237e; --accent: #00c853; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-        .logo-sgf { font-size: 24px; font-weight: bold; color: var(--primary); margin-bottom: 30px; }
-        
-        /* Estados del Semáforo */
-        .status-box { padding: 20px; border-radius: 15px; margin: 20px 0; font-weight: bold; border: 2px solid transparent; }
-        .espera { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
-        .procesando { background: #fff8e1; color: #f9a825; border-color: #ffe082; }
-        .generada { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+        :root {
+            --primary: #1a237e;
+            --accent: #00c853;
+            --bg: #f0f2f5;
+            --danger: #d32f2f;
+            --warning: #f57c00;
+            --white: #ffffff;
+            --text-main: #333;
+            --text-muted: #666;
+        }
 
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn-sgf { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-sgf:hover { background: #0d47a1; }
-        
-        .btn-download { background: var(--accent); margin-top: 15px; display: none; } /* Solo sale cuando es 'generada' */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .container {
+            background: var(--white);
+            width: 100%;
+            max-width: 850px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 0;
+            margin: 20px;
+        }
+
+        /* --- SECCIÓN DE LOGIN --- */
+        #login-section {
+            padding: 50px;
+            text-align: center;
+        }
+
+        .logo-header {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+            max-width: 350px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(26,35,126,0.1); }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .btn-main:hover { background: #0d1642; transform: translateY(-2px); }
+
+        /* --- DASHBOARD INTERNO --- */
+        #status-section {
+            display: none;
+            padding: 0;
+        }
+
+        .panel-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-body { padding: 40px; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+
+        /* Tarjetas Estilo "Office" */
+        .card-box {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .card-box h4 { margin-top: 0; color: var(--primary); font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+
+        /* Semáforo de Estado */
+        .status-pill {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 20px;
+            margin: 20px 0;
+        }
+
+        .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
+        .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
+        .activo { background: #e8f5e9; color: var(--accent); border: 1px solid #a5d6a7; }
+
+        /* Items de Acción */
+        .action-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .action-item:hover { border-color: var(--primary); background: #fcfcfc; }
+
+        .action-icon {
+            width: 45px; height: 45px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin-right: 15px;
+        }
+
+        .icon-red { background: #ffebee; color: var(--danger); }
+        .icon-yellow { background: #fff8e1; color: var(--warning); }
+
+        .action-info b { display: block; font-size: 14px; }
+        .action-info span { font-size: 12px; color: #888; }
+
+        /* Formulario de Pago */
+        #payment-area {
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px dashed #ddd;
+            display: none;
+        }
+
+        .bank-info {
+            background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;
+            font-size: 13px; line-height: 1.6; border-left: 4px solid var(--accent);
+        }
+
+        .file-upload {
+            background: var(--primary); color: white; padding: 12px;
+            border-radius: 6px; display: inline-block; cursor: pointer; margin: 10px 0;
+        }
+
+        .file-upload input { display: none; }
+
+        .btn-success {
+            background: var(--accent); color: white; border: none;
+            padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+
+        /* Botón de Mapa Final */
+        #access-map-btn {
+            display: none;
+            margin-top: 30px;
+            background: var(--accent);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 4px 20px rgba(0, 200, 83, 0.4);
+        }
     </style>
 </head>
 <body>
 
-<div class="card" id="login-section">
-    <div class="logo-sgf">SGF CLOUD SERVICES</div>
-    <h3>Acceso a Suscripción</h3>
-    <input type="text" id="user" placeholder="Usuario Municipal">
-    <input type="password" id="pass" placeholder="Contraseña">
-    <button class="btn-sgf" onclick="entrar()">Ingresar al Panel</button>
-</div>
-
-<div class="card" id="status-section" style="display: none;">
-    <div class="logo-sgf">NODO: AYACUCHO-01</div>
-    <hr>
+<div class="container">
     
-    <div id="status-indicator" class="status-box espera">
-        <i class="fa-solid fa-clock"></i> <span id="status-text">ESTADO: EN ESPERA DE PAGO</span>
+    <div id="login-section">
+        <div class="logo-header"><i class="fa-solid fa-cloud-shield"></i> SGF CLOUD</div>
+        <div class="subtitle">Acceso al Nodo de Recaudación Municipal</div>
+        
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="ID de Suscriptor (Ej: AYAC-2026)">
+        </div>
+        <div class="input-group">
+            <input type="password" id="passInput" placeholder="Contraseña">
+        </div>
+        
+        <button class="btn-main" onclick="validarLogin()">INGRESAR AL PANEL</button>
     </div>
 
-    <p id="msg-instruccion">Por favor, adjunte el comprobante de transferencia para activar su licencia.</p>
+    <div id="status-section">
+        <div class="panel-header">
+            <div>
+                <span style="font-size: 12px; opacity: 0.8;">MUNICIPIO AUTORIZADO:</span>
+                <div style="font-size: 18px; font-weight: bold;">ALCALDÍA DE AYACUCHO</div>
+            </div>
+            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer; font-size: 20px;">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
 
-    <div id="form-pago">
-        <input type="text" id="ref" placeholder="Nro de Referencia Bancaria">
-        <input type="file" id="capture" style="margin: 10px 0;">
-        <button class="btn-sgf" onclick="enviarPago()">Reportar Pago</button>
+        <div class="panel-body">
+            <div class="main-grid">
+                
+                <div class="card-box">
+                    <h4>Estado del Servicio</h4>
+                    <div id="status-indicator" class="status-pill vencido">
+                        <i class="fa-solid fa-triangle-exclamation"></i><br>SUSPENDIDO
+                    </div>
+                    <p style="text-align: center; font-size: 13px; color: #666;">
+                        Vencimiento: <b id="vence-txt">15/03/2026</b>
+                    </p>
+                </div>
+
+                <div class="card-box">
+                    <h4>Gestión de Licencia</h4>
+                    
+                    <div class="action-item" onclick="abrirPago('Renovación Urgente')">
+                        <div class="action-icon icon-red"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="action-info">
+                            <b>Renovar Licencia Vencida</b>
+                            <span>Reactivación inmediata del visor de mapas.</span>
+                        </div>
+                    </div>
+
+                    <div class="action-item" onclick="abrirPago('Extensión Preventiva')">
+                        <div class="action-icon icon-yellow"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <div class="action-info">
+                            <b>Extender Licencia (Preventivo)</b>
+                            <span>Evite cortes por vencimiento próximo.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="payment-area">
+                <h3 id="pago-titulo" style="margin-top:0;">Reportar Pago</h3>
+                <div class="bank-info">
+                    <strong>DATOS DE TRANSFERENCIA:</strong><br>
+                    Banco: Mercantil / Pago Móvil: 04XX-XXXXXXX<br>
+                    RIF: V-XXXXXXXX / Binance ID: 987654321
+                </div>
+                
+                <input type="text" id="refBancaria" placeholder="Número de Referencia Bancaria">
+                
+                <label class="file-upload">
+                    <input type="file" id="captureFile" onchange="actualizarNombreArchivo()">
+                    <i class="fa-solid fa-camera"></i> <span id="file-label">Adjuntar Capture de Pago</span>
+                </label>
+
+                <button class="btn-success" onclick="procesarPago()">ENVIAR REPORTE AL NODO</button>
+            </div>
+
+            <a href="index.html" id="access-map-btn">
+                <i class="fa-solid fa-map-location-dot"></i> ENTRAR AL VISOR DE MAPAS
+            </a>
+
+        </div>
     </div>
-
-    <button class="btn-sgf btn-download" id="btn-licencia" onclick="irAlMapa()">
-        <i class="fa-solid fa-certificate"></i> LICENCIA GENERADA - ENTRAR
-    </button>
 </div>
 
 <script>
-    function entrar() {
-        // Simulación de login
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('status-section').style.display = 'block';
+    // 1. Simulación de Login (Luego lo conectaremos a tu auth.json)
+    function validarLogin() {
+        const user = document.getElementById('userInput').value;
+        const pass = document.getElementById('passInput').value;
+
+        if(user !== "" && pass !== "") {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('status-section').style.display = 'block';
+        } else {
+            alert("Ingrese sus credenciales de nodo municipal.");
+        }
     }
 
-    function enviarPago() {
-        const statusIcon = document.getElementById('status-indicator');
-        const statusText = document.getElementById('status-text');
+    // 2. Abrir formulario de pago
+    function abrirPago(tipo) {
+        document.getElementById('pago-titulo').innerText = "Reportar " + tipo;
+        document.getElementById('payment-area').style.display = 'block';
+        document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
+    }
+
+    // 3. Feedback visual del archivo
+    function actualizarNombreArchivo() {
+        const file = document.getElementById('captureFile').files[0];
+        if(file) document.getElementById('file-label').innerText = "Imagen: " + file.name;
+    }
+
+    // 4. Lógica de envío (Simulada para tu flujo)
+    function procesarPago() {
+        const ref = document.getElementById('refBancaria').value;
+        if(ref === "") return alert("Por favor ingrese la referencia bancaria.");
+
+        // Cambiar estatus a "PROCESANDO"
+        const indicator = document.getElementById('status-indicator');
+        indicator.className = "status-pill proximo";
+        indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><br>VERIFICANDO...';
         
-        // Cambiamos a Procesando
-        statusIcon.className = "status-box procesando";
-        statusText.innerText = "ESTADO: VERIFICANDO PAGO...";
-        document.getElementById('form-pago').style.display = 'none';
-        document.getElementById('msg-instruccion').innerText = "Su reporte ha sido enviado al Administrador Maestro. Tiempo estimado: 15-30 min.";
-        
-        // Aquí el script enviaría el capture a tu GitHub Repo
-    }
+        document.getElementById('payment-area').style.display = 'none';
+        alert("Reporte enviado exitosamente. El Administrador validará su pago en breve.");
 
-    function irAlMapa() {
-        window.location.href = "index.html";
-    }
-
-    // Esta función la disparas tú desde tu Admin Master
-    function simularAprobacion() {
-        const statusIcon = document.getElementById('status-indicator');
-        statusIcon.className = "status-box generada";
-        document.getElementById('status-text').innerText = "ESTADO: LICENCIA ACTIVA";
-        document.getElementById('btn-licencia').style.display = 'block';
-        document.getElementById('msg-instruccion').style.display = 'none';
+        // NOTA: Aquí es donde el script enviará los datos a tu repositorio secreto.
     }
 </script>
 
