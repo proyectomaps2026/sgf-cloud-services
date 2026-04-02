@@ -227,6 +227,25 @@
             })
             .then(r => r.json())
             .then(data => {
+    console.log("✅ Foto en Cloudinary:", data.secure_url);
+    
+    // --- CONEXIÓN AL MASTER ---
+    const nuevaOrden = {
+        id: numOrden,
+        metodo: metodo,
+        referencia: ref,
+        comprobante: data.secure_url,
+        fecha: new Date().toLocaleString(),
+        status: "Pendiente"
+    };
+
+    // Guardamos en la memoria compartida (CABLE LOCAL)
+    let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+    bandeja.push(nuevaOrden);
+    localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
+    
+    console.log("🔔 Notificación enviada al Admin Master");
+})
                 console.log("✅ Comprobante en Cloudinary:", data.secure_url);
             })
             .catch(e => {
