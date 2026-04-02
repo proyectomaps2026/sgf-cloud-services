@@ -2,157 +2,175 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CLOUD | PANEL MAESTRO DE CONTROL</title>
+    <title>SGF MASTER CONTROL | Terminal de Auditoría</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00ff41; --warning: #ffcc00; --danger: #ff3333; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
+        :root { 
+            --master-bg: #0a0e14; 
+            --panel-bg: #151c26; 
+            --accent: #00e676; 
+            --danger: #ff5252; 
+            --warning: #f57c00;
+            --text: #e0e0e0; 
+        }
         
-        /* Sidebar */
-        .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #333; padding: 20px; position: fixed; }
-        .logo { font-size: 20px; font-weight: bold; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; }
-        .logo i { margin-right: 10px; }
-        .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #aaa; }
-        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--master-bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        
+        /* --- ACCESO RESTRINGIDO --- */
+        #master-lock { 
+            text-align: center; 
+            background: var(--panel-bg); 
+            padding: 50px; 
+            border-radius: 20px; 
+            border: 1px solid #2d3748; 
+            width: 100%; 
+            max-width: 380px; 
+        }
+        .lock-icon { font-size: 50px; color: var(--danger); margin-bottom: 20px; }
+        input[type="password"] { 
+            width: 100%; padding: 15px; background: #0a0e14; border: 1px solid #333; 
+            color: var(--accent); border-radius: 8px; text-align: center; font-size: 20px; 
+            letter-spacing: 4px; margin-bottom: 20px; box-sizing: border-box;
+        }
+        .btn-unlock { 
+            background: var(--danger); color: white; border: none; padding: 15px; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; 
+        }
 
-        /* Main Content */
-        .main { margin-left: 280px; padding: 40px; width: calc(100% - 320px); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        /* --- PANEL DE AUDITORÍA --- */
+        #master-panel { display: none; width: 100%; max-width: 900px; padding: 20px; align-self: flex-start; margin-top: 40px; }
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 2px solid #1f2937; padding-bottom: 20px; margin-bottom: 30px; 
+        }
         
-        /* Cards & Stats */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        .stat-card h3 { margin: 0; font-size: 14px; color: #888; }
-        .stat-card p { font-size: 24px; margin: 10px 0 0 0; font-weight: bold; }
+        .grid-auditoria { display: grid; gap: 20px; }
+        .card-auditoria { 
+            background: var(--panel-bg); padding: 25px; border-radius: 15px; 
+            border: 1px solid #2d3748; display: flex; justify-content: space-between; 
+            align-items: center; transition: 0.3s;
+        }
+        .card-auditoria:hover { border-color: var(--accent); }
 
-        /* Tables */
-        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #333; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #1e1e22; padding: 15px; text-align: left; font-size: 13px; color: #888; }
-        td { padding: 15px; border-top: 1px solid #333; font-size: 14px; }
+        .info-fiscal b { color: var(--accent); font-size: 18px; display: block; margin-bottom: 5px; }
+        .info-fiscal p { margin: 3px 0; font-size: 13px; color: #8892b0; }
         
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .status-active { background: rgba(0, 255, 65, 0.1); color: var(--success); }
-        .status-warning { background: rgba(255, 204, 0, 0.1); color: var(--warning); }
-        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); }
+        .btn-check { 
+            background: #1f2937; color: white; padding: 10px 15px; 
+            border-radius: 6px; text-decoration: none; font-size: 12px; 
+            display: inline-block; margin-top: 10px; border: 1px solid #334155;
+        }
+        .btn-check:hover { background: #334155; }
 
-        /* Forms / Modals */
-        .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-action { background: #333; color: white; font-size: 12px; }
-        
-        #modalCliente { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 30px; border-radius: 15px; width: 400px; border: 1px solid #444; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #0a0a0c; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box; }
+        .btn-activate { 
+            background: var(--accent); color: #0a0e14; border: none; 
+            padding: 15px 25px; border-radius: 10px; font-weight: 900; 
+            cursor: pointer; text-transform: uppercase;
+        }
+        .badge-pendiente { background: var(--warning); color: white; padding: 3px 8px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="logo"><i class="fa-solid fa-server"></i> SGF MASTER</div>
-    <div class="nav-item active"><i class="fa-solid fa-users-gear"></i> Gestión de Clientes</div>
-    <div class="nav-item"><i class="fa-solid fa-receipt"></i> Bandeja de Pagos</div>
-    <div class="nav-item"><i class="fa-solid fa-shield-halved"></i> Seguridad Token</div>
-</div>
-
-<div class="main">
-    <div class="header">
-        <h1>Dashboard Administrativo</h1>
-        <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Nuevo Cliente</button>
+    <div id="master-lock">
+        <div class="lock-icon"><i class="fa-solid fa-user-shield"></i></div>
+        <h2 style="margin:0;">MASTER ACCESS</h2>
+        <p style="font-size: 11px; color: #8892b0; margin: 10px 0 25px 0;">CENTRO DE MANDO TÁCHIRA SGF</p>
+        <input type="password" id="masterKey" placeholder="••••••">
+        <button class="btn-unlock" onclick="verificarAcceso()">INGRESAR AL NODO</button>
     </div>
 
-    <div class="grid">
-        <div class="stat-card">
-            <h3>Nodos Activos</h3>
-            <p id="totalActivos">0</p>
+    <div id="master-panel">
+        <div class="header">
+            <div>
+                <h1 style="margin:0; font-size: 24px;"><i class="fa-solid fa-tower-observation"></i> PANEL DE AUDITORÍA FISCAL</h1>
+                <p style="margin:5px 0 0 0; font-size: 12px; color: var(--accent);">CONECTADO A NUBE: drxiko8l4</p>
+            </div>
+            <div style="text-align: right;">
+                <span id="peticiones-count" style="background: var(--danger); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">0 PENDIENTES</span>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>Pagos por Verificar</h3>
-            <p style="color: var(--warning)">3</p>
-        </div>
-        <div class="stat-card">
-            <h3>Recaudación Proyectada</h3>
-            <p>$ 1,240.00</p>
-        </div>
-    </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>CLIENTE / MUNICIPIO</th>
-                    <th>ID NODO</th>
-                    <th>VENCIMIENTO VIRTUAL</th>
-                    <th>ESTADO</th>
-                    <th>ACCIONES</th>
-                </tr>
-            </thead>
-            <tbody id="listaClientes">
-                <tr>
-                    <td>Alcaldía de Ayacucho</td>
-                    <td>AYAC-2026</td>
-                    <td>2026-05-15</td>
-                    <td><span class="status-pill status-active">AL DÍA</span></td>
-                    <td>
-                        <button class="btn btn-action" title="Ver Capture"><i class="fa-solid fa-image"></i></button>
-                        <button class="btn btn-action" title="Generar Token" onclick="generarToken('AYAC-2026')"><i class="fa-solid fa-key"></i></button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="lista-auditoria" class="grid-auditoria">
+            </div>
     </div>
-</div>
-
-<div id="modalCliente">
-    <div class="modal-content">
-        <h3>Registrar Nueva Alcaldía</h3>
-        <input type="text" id="nombreMun" placeholder="Nombre (Ej: Michelena)">
-        <input type="text" id="idNodo" placeholder="ID Nodo (Ej: MICH-01)">
-        <input type="text" id="githubRepo" placeholder="URL Repo GitHub del Cliente">
-        <input type="password" id="githubPAT" placeholder="GitHub PAT (Token del Cliente)">
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-primary" onclick="guardarCliente()" style="flex:1">Guardar</button>
-            <button class="btn btn-action" onclick="closeModal()">Cancelar</button>
-        </div>
-    </div>
-</div>
 
 <script>
-    // Lógica para abrir/cerrar modal
-    function openModal() { document.getElementById('modalCliente').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modalCliente').style.display = 'none'; }
+    // LLAVE DE TUS 3 SOCIOS Y TÚ
+    const KEY_MAESTRA = "AURA2026"; 
 
-    // Simulación de guardado
-    function guardarCliente() {
-        const nombre = document.getElementById('nombreMun').value;
-        const id = document.getElementById('idNodo').value;
-        
-        // Aquí iría la función para escribir en clientes_master.json vía GitHub API
-        alert(`Cliente ${nombre} registrado. Se ha creado su estructura de seguridad.`);
-        closeModal();
+    function verificarAcceso() {
+        const pass = document.getElementById('masterKey').value;
+        if(pass === KEY_MAESTRA) {
+            document.getElementById('master-lock').style.display = 'none';
+            document.getElementById('master-panel').style.display = 'block';
+            iniciarEscucha();
+        } else {
+            alert("LLAVE INCORRECTA. Acceso denegado.");
+        }
     }
 
-    // Función Maestra: El Barajeador Individual
-    function generarToken(idNodo) {
-        // 1. Obtener la llave maestra de ese cliente desde tu DB interna
-        const llaveEterna = "ghp_Eterno_Simulado_Para_Cada_Alcaldia"; 
-        
-        // 2. Definir nueva fecha (Ejemplo: 30 días más)
-        const fechaVirtual = "20261231"; 
-        
-        // 3. BARRAJEADO DINÁMICO
-        // Posición 0: 'E' indica que la llave real empieza en el index 5 (A=1, B=2...)
-        const prefijo = "E"; 
-        const basura = "XJ92L"; 
-        const chorizo = prefijo + basura + llaveEterna + "..." + fechaVirtual + "XYZ789";
-        
-        alert(`TOKEN GENERADO PARA ${idNodo}\n\nEl sistema actualizará el config.json en el repositorio del cliente.`);
-        
-        // Aquí se dispara el fetch() hacia el repo de esa alcaldía específica
-        console.log("Subiendo token a GitHub del cliente: " + idNodo);
+    function iniciarEscucha() {
+        renderizarLista();
+        // Revisar cada 5 segundos si llegó algo nuevo del portal
+        setInterval(renderizarLista, 5000);
+    }
+
+    function renderizarLista() {
+        // Leemos la bandeja compartida (LocalStorage para la prueba de hoy)
+        const bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+        const contenedor = document.getElementById('lista-auditoria');
+        const contador = document.getElementById('peticiones-count');
+
+        contador.innerText = `${bandeja.length} PENDIENTES`;
+
+        if(bandeja.length === 0) {
+            contenedor.innerHTML = '<div style="text-align:center; margin-top:50px; color:#334155;"><i class="fa-solid fa-satellite" style="font-size:40px;"></i><p>Escaneando red en busca de órdenes...</p></div>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        bandeja.reverse().forEach((pago, index) => {
+            // Reconstruimos la URL de Cloudinary usando tu Cloud Name drxiko8l4
+            const urlCloudinary = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${pago.id}.jpg`;
+            
+            contenedor.innerHTML += `
+                <div class="card-auditoria">
+                    <div class="info-fiscal">
+                        <b>ORDEN: ${pago.id} <span class="badge-pendiente">EN ESPERA</span></b>
+                        <p><i class="fa-solid fa-wallet"></i> ${pago.metodo}</p>
+                        <p><i class="fa-solid fa-receipt"></i> REF: ${pago.referencia}</p>
+                        <a href="${urlCloudinary}" target="_blank" class="btn-check">
+                            <i class="fa-solid fa-image"></i> VER COMPROBANTE CLOUDINARY
+                        </a>
+                    </div>
+                    <button class="btn-activate" onclick="liberarLicencia('${pago.id}', ${index})">
+                        <i class="fa-solid fa-bolt"></i> ACTIVAR
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    function liberarLicencia(id, index) {
+        if(confirm("¿Confirmas la recepción del pago para la Orden " + id + "?")) {
+            let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+            bandeja.splice(index, 1); // La sacamos de la lista
+            localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
+            
+            alert("PROTOCOLO ACTIVADO. La licencia para el fiscal ha sido liberada en el sistema.");
+            renderizarLista();
+        }
     }
 </script>
-
 </body>
 </html>
