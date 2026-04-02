@@ -7,34 +7,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #1a237e;
-            --accent: #00c853;
-            --bg: #f0f2f5;
-            --danger: #d32f2f;
-            --warning: #f57c00;
-            --white: #ffffff;
-            --text-main: #333;
-            --text-muted: #666;
+            --primary: #1a237e; --accent: #00c853; --bg: #f0f2f5;
+            --danger: #d32f2f; --warning: #f57c00; --white: #ffffff;
+            --text-main: #333; --text-muted: #666;
         }
 
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--bg); margin: 0; display: flex;
+            justify-content: center; align-items: center; min-height: 100vh;
         }
 
         .container {
-            background: var(--white);
-            width: 100%;
-            max-width: 850px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            margin: 20px;
+            background: var(--white); width: 100%; max-width: 850px;
+            border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden; margin: 20px;
         }
 
         /* --- LOGIN --- */
@@ -60,13 +47,10 @@
         .card-box { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 25px; position: relative; }
         .card-box h4 { margin-top: 0; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 
-        /* Semáforo */
         .status-pill { padding: 20px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 18px; margin: 20px 0; }
         .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
         .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
-        .activo { background: #e8f5e9; color: var(--accent); border: 1px solid #a5d6a7; }
 
-        /* Acciones */
         .action-item {
             display: flex; align-items: center; background: white; padding: 15px; border-radius: 10px;
             margin-bottom: 12px; border: 1px solid #eee; cursor: pointer; transition: 0.2s;
@@ -90,14 +74,7 @@
         .file-upload input { display: none; }
         .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
-        /* Pantalla de Verificación */
         #verifying-display { display: none; text-align: center; padding: 30px; border: 1px solid #ffe082; background: #fffcf0; border-radius: 12px; }
-        
-        #access-map-btn {
-            display: none; margin-top: 30px; background: var(--accent); color: white; padding: 20px;
-            border-radius: 12px; text-align: center; text-decoration: none; font-weight: 800; font-size: 18px;
-            box-shadow: 0 4px 20px rgba(0, 200, 83, 0.4);
-        }
     </style>
 </head>
 <body>
@@ -107,14 +84,8 @@
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">NODO CENTRAL DE INTELIGENCIA FISCAL</div>
-        
-        <div class="input-group">
-            <input type="text" id="userInput" placeholder="Usuario de Nodo (Ej: AYAC-2026)">
-        </div>
-        <div class="input-group">
-            <input type="password" id="passInput" placeholder="Contraseña de Seguridad">
-        </div>
-        
+        <div class="input-group"><input type="text" id="userInput" placeholder="Usuario de Nodo"></div>
+        <div class="input-group"><input type="password" id="passInput" placeholder="Contraseña de Seguridad"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR ACCESO</button>
     </div>
 
@@ -124,42 +95,26 @@
                 <span style="font-size: 10px; text-transform: uppercase; opacity: 0.8;">Terminal Autorizada:</span>
                 <div id="display-user" style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">SGF-NODO-LOCAL</div>
             </div>
-            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;">
-                <i class="fa-solid fa-power-off"></i>
-            </button>
+            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
         <div class="panel-body">
             <div class="main-grid">
-                
                 <div class="card-box" style="border-top: 4px solid var(--danger);">
                     <h4>Estatus del Protocolo</h4>
-                    <div id="status-indicator" class="status-pill vencido">
-                        <i class="fa-solid fa-lock"></i><br>LICENCIA INACTIVA
-                    </div>
-                    <p style="text-align: center; font-size: 12px; color: #777;">
-                        Licencia API: <b style="color:var(--primary)">#SGF-2026-FISC</b><br>
-                        Vence: <b id="vence-txt">02/04/2026</b>
-                    </p>
+                    <div id="status-indicator" class="status-pill vencido"><i class="fa-solid fa-lock"></i><br>LICENCIA INACTIVA</div>
+                    <p style="text-align: center; font-size: 12px; color: #777;">Licencia API: <b style="color:var(--primary)">#SGF-2026-FISC</b><br>Vence: <b>02/04/2026</b></p>
                 </div>
 
                 <div class="card-box">
                     <h4>Gestión de Licencia API</h4>
-                    
-                    <div class="action-item" onclick="abrirPago('Renovación de Licencia API')">
+                    <div class="action-item" onclick="abrirPago('Renovar Licencia API')">
                         <div class="action-icon icon-red"><i class="fa-solid fa-key"></i></div>
-                        <div class="action-info">
-                            <b>Renovar Licencia API</b>
-                            <span>Restablecer el puente de datos tributarios.</span>
-                        </div>
+                        <div class="action-info"><b>Renovar Licencia API</b><span>Restablecer el puente de datos tributarios.</span></div>
                     </div>
-
-                    <div class="action-item" onclick="abrirPago('Extensión Licencia API')">
-                        <div class="action-icon icon-yellow"><i class="fa-solid fa-shield-halved"></i></div>
-                        <div class="action-info">
-                            <b>Extender Licencia API</b>
-                            <span>Garantizar continuidad de auditoría cartográfica.</span>
-                        </div>
+                    <div class="action-item" onclick="abrirPago('Extender Licencia API')">
+                        <div class="action-icon icon-yellow"><i class="fa-solid fa-key"></i></div>
+                        <div class="action-info"><b>Extender Licencia API</b><span>Garantizar continuidad de auditoría cartográfica.</span></div>
                     </div>
                 </div>
             </div>
@@ -169,31 +124,30 @@
                 
                 <div class="bank-info-grid">
                     <div class="bank-card" style="border-left: 3px solid var(--primary); background: #f8f9ff;">
-                        <strong style="color:var(--primary)">PAGO MÓVIL (BS)</strong><br>
-                        Mercantil (0105) | V-XXXXXXXX<br>Telf: 04XX-XXXXXXX
+                        <strong>PAGO MÓVIL (BS)</strong><br>Mercantil (0105) | V-XXXXXXXX<br>Telf: 04XX-XXXXXXX
                     </div>
                     <div class="bank-card" style="border-left: 3px solid #f3ba2f; background: #fffdf0;">
-                        <strong style="color:#8a6d1c">BINANCE PAY (USDT)</strong><br>
-                        ID Merchant: 987654321<br>Usuario: SGF_Cloud_Audit
+                        <strong>BINANCE PAY (USDT)</strong><br>ID Merchant: 987654321<br>Usuario: SGF_Cloud_Audit
                     </div>
                 </div>
 
                 <div id="form-inner">
                     <div style="margin-bottom: 12px;">
                         <label style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; display: block;">Método de Liquidación:</label>
-                        <select id="metodoPago">
+                        <select id="metodoPago" onchange="toggleCampos()">
                             <option value="Pago Móvil / Transferencia">Pago Móvil / Transferencia BS</option>
                             <option value="Binance Pay (USDT)">Binance Pay (USDT)</option>
                             <option value="Efectivo / Acuerdo Directo">Efectivo / Acuerdo Directo</option>
                         </select>
                     </div>
 
-                    <input type="text" id="refBancaria" placeholder="Introduzca Nro de Referencia o ID de Transacción">
-                    
-                    <label class="file-upload">
-                        <input type="file" id="captureFile" onchange="actualizarNombreArchivo()">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> <span id="file-label">Cargar Comprobante Digital</span>
-                    </label>
+                    <div id="campos-digitales">
+                        <input type="text" id="refBancaria" placeholder="Introduzca Nro de Referencia o ID de Transacción">
+                        <label class="file-upload">
+                            <input type="file" id="captureFile" onchange="actualizarNombreArchivo()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> <span id="file-label">Cargar Comprobante Digital</span>
+                        </label>
+                    </div>
 
                     <button class="btn-success" onclick="procesarPago()">SOLICITAR VALIDACIÓN DE FIRMA</button>
                 </div>
@@ -205,20 +159,9 @@
                     </div>
                     <h4 style="margin:15px 0 5px 0; color: var(--warning); font-size: 16px;">ORDEN DE PAGO #<span id="orden-id">---</span></h4>
                     <p style="font-size: 12px; color: #444; font-weight: bold; text-transform: uppercase;">Estado: En Auditoría de Equipo</p>
-                    <p style="font-size: 11px; color: #777; line-height: 1.4;">
-                        El equipo técnico está conciliando la referencia <b id="ref-confirmada">---</b><br>
-                        vía <b id="metodo-confirmado">---</b>.
-                    </p>
-                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 10px; color: #999;">
-                        Esta operación ha sido registrada en el log del Nodo Central.
-                    </div>
+                    <p style="font-size: 11px; color: #777; line-height: 1.4;">El equipo técnico está conciliando la referencia <b id="ref-confirmada">---</b> vía <b id="metodo-confirmado">---</b>.</p>
                 </div>
             </div>
-
-            <a href="index.html" id="access-map-btn">
-                <i class="fa-solid fa-map-location-dot"></i> ACCEDER AL SISTEMA FISCAL
-            </a>
-
         </div>
     </div>
 </div>
@@ -231,31 +174,32 @@
             document.getElementById('display-user').innerText = "USUARIO: " + user.toUpperCase();
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-        } else {
-            alert("Acceso denegado. Verifique sus credenciales de Nodo.");
-        }
+        } else { alert("Acceso denegado."); }
     }
 
     function abrirPago(tipo) {
         document.getElementById('pago-titulo').innerText = "Generar " + tipo;
         document.getElementById('payment-area').style.display = 'block';
-        document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
+    }
+
+    function toggleCampos() {
+        const metodo = document.getElementById('metodoPago').value;
+        const campos = document.getElementById('campos-digitales');
+        campos.style.display = (metodo === "Efectivo / Acuerdo Directo") ? "none" : "block";
     }
 
     function procesarPago() {
-        const ref = document.getElementById('refBancaria').value;
         const metodo = document.getElementById('metodoPago').value;
+        const ref = document.getElementById('refBancaria').value;
         
-        // Si el método es efectivo, puede que no tengan referencia, pero igual activamos la auditoría
-        if(ref === "" && metodo !== "Efectivo / Acuerdo Directo") {
+        if(metodo !== "Efectivo / Acuerdo Directo" && ref === "") {
             return alert("Debe ingresar la referencia para validar la firma.");
         }
 
         const numOrden = "SGF-" + (Math.floor(Math.random() * 900000) + 100000);
-        
         document.getElementById('orden-id').innerText = numOrden;
         document.getElementById('metodo-confirmado').innerText = metodo;
-        document.getElementById('ref-confirmada').innerText = ref || "ACUERDO DIRECTO";
+        document.getElementById('ref-confirmada').innerText = (metodo === "Efectivo / Acuerdo Directo") ? "TRAMITE FÍSICO" : ref;
 
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
@@ -263,15 +207,13 @@
         const indicator = document.getElementById('status-indicator');
         indicator.className = "status-pill proximo";
         indicator.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
-
-        alert("Orden de Pago #" + numOrden + " recibida. El equipo de auditoría validará los fondos en breve.");
+        alert("Orden #" + numOrden + " recibida. Equipo de auditoría notificado.");
     }
 
     function actualizarNombreArchivo() {
         const file = document.getElementById('captureFile').files[0];
-        if(file) document.getElementById('file-label').innerText = "Comprobante: " + file.name;
+        if(file) document.getElementById('file-label').innerText = "Archivo: " + file.name;
     }
 </script>
-
 </body>
 </html>
