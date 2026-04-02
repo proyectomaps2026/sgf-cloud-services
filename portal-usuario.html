@@ -24,7 +24,7 @@
             overflow: hidden; margin: 20px;
         }
 
-        /* --- LOGIN --- */
+        /* --- SECCIÓN DE ACCESO (LOGIN) --- */
         #login-section { padding: 60px 50px; text-align: center; }
         .logo-header { font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1px; }
         .subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 14px; font-weight: 500; }
@@ -38,7 +38,7 @@
         }
         .btn-main:hover { background: #0d1642; transform: translateY(-1px); }
 
-        /* --- DASHBOARD --- */
+        /* --- PANEL DE CONTROL (DASHBOARD) --- */
         #status-section { display: none; }
         .panel-header { background: var(--primary); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
         .panel-body { padding: 40px; }
@@ -47,10 +47,12 @@
         .card-box { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 25px; position: relative; }
         .card-box h4 { margin-top: 0; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 
+        /* Semáforo de Estado de Licencia */
         .status-pill { padding: 20px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 18px; margin: 20px 0; }
         .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
         .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
 
+        /* Botones de Acción con Iconos Corregidos */
         .action-item {
             display: flex; align-items: center; background: white; padding: 15px; border-radius: 10px;
             margin-bottom: 12px; border: 1px solid #eee; cursor: pointer; transition: 0.2s;
@@ -62,7 +64,7 @@
         .action-info b { display: block; font-size: 14px; color: var(--text-main); }
         .action-info span { font-size: 11px; color: #888; }
 
-        /* Area de Pago */
+        /* Área de Pago Interactiva */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
         .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .bank-card { padding: 12px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; }
@@ -74,6 +76,7 @@
         .file-upload input { display: none; }
         .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
+        /* Pantalla de Espera en Auditoría */
         #verifying-display { display: none; text-align: center; padding: 30px; border: 1px solid #ffe082; background: #fffcf0; border-radius: 12px; }
     </style>
 </head>
@@ -167,6 +170,7 @@
 </div>
 
 <script>
+    // --- LÓGICA DE LOGIN ---
     function validarLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
@@ -174,32 +178,67 @@
             document.getElementById('display-user').innerText = "USUARIO: " + user.toUpperCase();
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-        } else { alert("Acceso denegado."); }
+        } else { alert("Acceso denegado. Verifique sus credenciales."); }
     }
 
+    // --- LÓGICA DE INTERFAZ ---
     function abrirPago(tipo) {
         document.getElementById('pago-titulo').innerText = "Generar " + tipo;
         document.getElementById('payment-area').style.display = 'block';
+        document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
     }
 
     function toggleCampos() {
         const metodo = document.getElementById('metodoPago').value;
         const campos = document.getElementById('campos-digitales');
+        // Si el método es Efectivo, elimina los cuadros de cargar foto y referencia
         campos.style.display = (metodo === "Efectivo / Acuerdo Directo") ? "none" : "block";
     }
 
-    function procesarPago() {
+    function actualizarNombreArchivo() {
+        const file = document.getElementById('captureFile').files[0];
+        if(file) document.getElementById('file-label').innerText = "Archivo: " + file.name;
+    }
+
+    // --- LÓGICA DE PROCESAMIENTO Y CARGA A CLOUDINARY ---
+    async function procesarPago() {
         const metodo = document.getElementById('metodoPago').value;
         const ref = document.getElementById('refBancaria').value;
+        const fileInput = document.getElementById('captureFile');
         
         if(metodo !== "Efectivo / Acuerdo Directo" && ref === "") {
             return alert("Debe ingresar la referencia para validar la firma.");
         }
 
         const numOrden = "SGF-" + (Math.floor(Math.random() * 900000) + 100000);
+
+        // --- MOTOR DE CARGA CLOUDINARY (PRESET: ORDENES / CLOUD: drxiko8l4) ---
+        if (metodo !== "Efectivo / Acuerdo Directo" && fileInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('upload_preset', 'ordenes'); 
+            formData.append('public_id', `pago_${numOrden}`); 
+
+            const cloudName = 'drxiko8l4'; 
+            
+            fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                console.log("✅ Comprobante en Cloudinary:", data.secure_url);
+            })
+            .catch(e => {
+                console.error("❌ Error en la carga:", e);
+                alert("Hubo un error al subir el comprobante. Verifique su internet.");
+            });
+        }
+
+        // --- ACTUALIZACIÓN DE LA INTERFAZ FINAL ---
         document.getElementById('orden-id').innerText = numOrden;
         document.getElementById('metodo-confirmado').innerText = metodo;
-        document.getElementById('ref-confirmada').innerText = (metodo === "Efectivo / Acuerdo Directo") ? "TRAMITE FÍSICO" : ref;
+        document.getElementById('ref-confirmada').innerText = (metodo === "Efectivo / Acuerdo Directo") ? "TRÁMITE FÍSICO / ACUERDO" : ref;
 
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
@@ -207,12 +246,8 @@
         const indicator = document.getElementById('status-indicator');
         indicator.className = "status-pill proximo";
         indicator.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
-        alert("Orden #" + numOrden + " recibida. Equipo de auditoría notificado.");
-    }
-
-    function actualizarNombreArchivo() {
-        const file = document.getElementById('captureFile').files[0];
-        if(file) document.getElementById('file-label').innerText = "Archivo: " + file.name;
+        
+        alert("Orden #" + numOrden + " generada. Su información ha sido enviada al equipo de auditoría.");
     }
 </script>
 </body>
