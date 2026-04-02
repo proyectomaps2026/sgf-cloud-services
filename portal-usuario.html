@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CLOUD | Portal de Suscripción Municipal</title>
+    <title>SGF CLOUD | Terminal de Inteligencia Fiscal</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -27,7 +27,6 @@
             min-height: 100vh;
         }
 
-        /* --- CONTENEDOR PRINCIPAL --- */
         .container {
             background: var(--white);
             width: 100%;
@@ -35,179 +34,68 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-            padding: 0;
             margin: 20px;
         }
 
-        /* --- SECCIÓN DE LOGIN --- */
-        #login-section {
-            padding: 50px;
-            text-align: center;
+        /* --- LOGIN --- */
+        #login-section { padding: 60px 50px; text-align: center; }
+        .logo-header { font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1px; }
+        .subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 14px; font-weight: 500; }
+        .input-group { margin-bottom: 15px; max-width: 350px; margin-left: auto; margin-right: auto; }
+        input[type="text"], input[type="password"], select {
+            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;
         }
-
-        .logo-header {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-            max-width: 350px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            transition: 0.3s;
-        }
-
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(26,35,126,0.1); }
-
         .btn-main {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 100%;
-            max-width: 350px;
+            background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; max-width: 350px; transition: 0.3s;
         }
+        .btn-main:hover { background: #0d1642; transform: translateY(-1px); }
 
-        .btn-main:hover { background: #0d1642; transform: translateY(-2px); }
-
-        /* --- DASHBOARD INTERNO --- */
-        #status-section {
-            display: none;
-            padding: 0;
-        }
-
-        .panel-header {
-            background: var(--primary);
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        /* --- DASHBOARD --- */
+        #status-section { display: none; }
+        .panel-header { background: var(--primary); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
         .panel-body { padding: 40px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 25px; }
 
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 30px;
-        }
+        .card-box { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 25px; position: relative; }
+        .card-box h4 { margin-top: 0; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 
-        /* Tarjetas Estilo "Office" */
-        .card-box {
-            background: #fafafa;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 25px;
-        }
-
-        .card-box h4 { margin-top: 0; color: var(--primary); font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-
-        /* Semáforo de Estado */
-        .status-pill {
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 800;
-            font-size: 20px;
-            margin: 20px 0;
-        }
-
+        /* Semáforo */
+        .status-pill { padding: 20px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 18px; margin: 20px 0; }
         .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
         .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
         .activo { background: #e8f5e9; color: var(--accent); border: 1px solid #a5d6a7; }
 
-        /* Items de Acción */
+        /* Acciones */
         .action-item {
-            display: flex;
-            align-items: center;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #eee;
-            cursor: pointer;
-            transition: 0.2s;
+            display: flex; align-items: center; background: white; padding: 15px; border-radius: 10px;
+            margin-bottom: 12px; border: 1px solid #eee; cursor: pointer; transition: 0.2s;
         }
-
-        .action-item:hover { border-color: var(--primary); background: #fcfcfc; }
-
-        .action-icon {
-            width: 45px; height: 45px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; margin-right: 15px;
-        }
-
+        .action-item:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .action-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px; }
         .icon-red { background: #ffebee; color: var(--danger); }
         .icon-yellow { background: #fff8e1; color: var(--warning); }
+        .action-info b { display: block; font-size: 14px; color: var(--text-main); }
+        .action-info span { font-size: 11px; color: #888; }
 
-        .action-info b { display: block; font-size: 14px; }
-        .action-info span { font-size: 12px; color: #888; }
-
-        /* Formulario de Pago */
-        #payment-area {
-            margin-top: 30px;
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 12px;
-            border: 2px dashed #ddd;
-            display: none;
-        }
-
-        .bank-info {
-            background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;
-            font-size: 13px; line-height: 1.6; border-left: 4px solid var(--accent);
-        }
-
+        /* Area de Pago e Interactividad */
+        #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
+        .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .bank-card { padding: 12px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; }
+        
         .file-upload {
-            background: var(--primary); color: white; padding: 12px;
-            border-radius: 6px; display: inline-block; cursor: pointer; margin: 10px 0;
+            background: #444; color: white; padding: 12px; border-radius: 6px;
+            display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600;
         }
-
         .file-upload input { display: none; }
+        .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
-        .btn-success {
-            background: var(--accent); color: white; border: none;
-            padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer;
-        }
-
-        /* Botón de Mapa Final */
+        /* Pantalla de Verificación */
+        #verifying-display { display: none; text-align: center; padding: 30px; border: 1px solid #ffe082; background: #fffcf0; border-radius: 12px; }
+        
         #access-map-btn {
-            display: none;
-            margin-top: 30px;
-            background: var(--accent);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 18px;
+            display: none; margin-top: 30px; background: var(--accent); color: white; padding: 20px;
+            border-radius: 12px; text-align: center; text-decoration: none; font-weight: 800; font-size: 18px;
             box-shadow: 0 4px 20px rgba(0, 200, 83, 0.4);
         }
     </style>
@@ -217,84 +105,118 @@
 <div class="container">
     
     <div id="login-section">
-        <div class="logo-header"><i class="fa-solid fa-cloud-shield"></i> SGF CLOUD</div>
-        <div class="subtitle">Acceso al Nodo de Recaudación Municipal</div>
+        <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
+        <div class="subtitle">NODO CENTRAL DE INTELIGENCIA FISCAL</div>
         
         <div class="input-group">
-            <input type="text" id="userInput" placeholder="ID de Suscriptor (Ej: AYAC-2026)">
+            <input type="text" id="userInput" placeholder="Usuario de Nodo (Ej: AYAC-2026)">
         </div>
         <div class="input-group">
-            <input type="password" id="passInput" placeholder="Contraseña">
+            <input type="password" id="passInput" placeholder="Contraseña de Seguridad">
         </div>
         
-        <button class="btn-main" onclick="validarLogin()">INGRESAR AL PANEL</button>
+        <button class="btn-main" onclick="validarLogin()">AUTENTICAR ACCESO</button>
     </div>
 
     <div id="status-section">
         <div class="panel-header">
             <div>
-                <span style="font-size: 12px; opacity: 0.8;">MUNICIPIO AUTORIZADO:</span>
-                <div style="font-size: 18px; font-weight: bold;">ALCALDÍA DE AYACUCHO</div>
+                <span style="font-size: 10px; text-transform: uppercase; opacity: 0.8;">Terminal Autorizada:</span>
+                <div id="display-user" style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">SGF-NODO-LOCAL</div>
             </div>
-            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer; font-size: 20px;">
-                <i class="fa-solid fa-right-from-bracket"></i>
+            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;">
+                <i class="fa-solid fa-power-off"></i>
             </button>
         </div>
 
         <div class="panel-body">
             <div class="main-grid">
                 
-                <div class="card-box">
-                    <h4>Estado del Servicio</h4>
+                <div class="card-box" style="border-top: 4px solid var(--danger);">
+                    <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">
-                        <i class="fa-solid fa-triangle-exclamation"></i><br>SUSPENDIDO
+                        <i class="fa-solid fa-lock"></i><br>NODO INACTIVO
                     </div>
-                    <p style="text-align: center; font-size: 13px; color: #666;">
-                        Vencimiento: <b id="vence-txt">15/03/2026</b>
+                    <p style="text-align: center; font-size: 12px; color: #777;">
+                        Licencia API: <b style="color:var(--primary)">#SGF-2026-FISC</b><br>
+                        Vence: <b id="vence-txt">02/04/2026</b>
                     </p>
                 </div>
 
                 <div class="card-box">
-                    <h4>Gestión de Licencia</h4>
+                    <h4>Validación de Acceso API</h4>
                     
-                    <div class="action-item" onclick="abrirPago('Renovación Urgente')">
-                        <div class="action-icon icon-red"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="action-item" onclick="abrirPago('Renovación de Firma')">
+                        <div class="action-icon icon-red"><i class="fa-solid fa-key"></i></div>
                         <div class="action-info">
-                            <b>Renovar Licencia Vencida</b>
-                            <span>Reactivación inmediata del visor de mapas.</span>
+                            <b>Renovar Firma Digital</b>
+                            <span>Restablecer el puente de datos tributarios.</span>
                         </div>
                     </div>
 
                     <div class="action-item" onclick="abrirPago('Extensión Preventiva')">
-                        <div class="action-icon icon-yellow"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <div class="action-icon icon-yellow"><i class="fa-solid fa-shield-halved"></i></div>
                         <div class="action-info">
-                            <b>Extender Licencia (Preventivo)</b>
-                            <span>Evite cortes por vencimiento próximo.</span>
+                            <b>Mantenimiento de Soporte</b>
+                            <span>Extender vigencia de auditoría cartográfica.</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="payment-area">
-                <h3 id="pago-titulo" style="margin-top:0;">Reportar Pago</h3>
-                <div class="bank-info">
-                    <strong>DATOS DE TRANSFERENCIA:</strong><br>
-                    Banco: Mercantil / Pago Móvil: 04XX-XXXXXXX<br>
-                    RIF: V-XXXXXXXX / Binance ID: 987654321
+                <h3 id="pago-titulo" style="margin-top:0; font-size: 15px; color: var(--primary); font-weight: 800; text-transform: uppercase;">Generar Orden de Activación</h3>
+                
+                <div class="bank-info-grid">
+                    <div class="bank-card" style="border-left: 3px solid var(--primary); background: #f8f9ff;">
+                        <strong style="color:var(--primary)">PAGO MÓVIL (BS)</strong><br>
+                        Mercantil (0105) | V-XXXXXXXX<br>Telf: 04XX-XXXXXXX
+                    </div>
+                    <div class="bank-card" style="border-left: 3px solid #f3ba2f; background: #fffdf0;">
+                        <strong style="color:#8a6d1c">BINANCE PAY (USDT)</strong><br>
+                        ID Merchant: 987654321<br>Red: TRC20 / BEP20
+                    </div>
                 </div>
-                
-                <input type="text" id="refBancaria" placeholder="Número de Referencia Bancaria">
-                
-                <label class="file-upload">
-                    <input type="file" id="captureFile" onchange="actualizarNombreArchivo()">
-                    <i class="fa-solid fa-camera"></i> <span id="file-label">Adjuntar Capture de Pago</span>
-                </label>
 
-                <button class="btn-success" onclick="procesarPago()">ENVIAR REPORTE AL NODO</button>
+                <div id="form-inner">
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; display: block;">Método de Liquidación:</label>
+                        <select id="metodoPago">
+                            <option value="Pago Móvil / Transferencia">Pago Móvil / Transferencia BS</option>
+                            <option value="Binance Pay (USDT)">Binance Pay (USDT)</option>
+                            <option value="Efectivo / Acuerdo Directo">Acuerdo Directo (Efectivo)</option>
+                        </select>
+                    </div>
+
+                    <input type="text" id="refBancaria" placeholder="Introduzca Nro de Referencia o ID de Transacción">
+                    
+                    <label class="file-upload">
+                        <input type="file" id="captureFile" onchange="actualizarNombreArchivo()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> <span id="file-label">Cargar Comprobante Digital</span>
+                    </label>
+
+                    <button class="btn-success" onclick="procesarPago()">SOLICITAR VALIDACIÓN DE FIRMA</button>
+                </div>
+
+                <div id="verifying-display">
+                    <div style="position: relative; display: inline-block;">
+                        <i class="fa-solid fa-gear fa-spin" style="font-size: 40px; color: var(--warning);"></i>
+                        <i class="fa-solid fa-users-gear" style="position: absolute; top: 12px; left: 8px; font-size: 15px; color: var(--primary);"></i>
+                    </div>
+                    <h4 style="margin:15px 0 5px 0; color: var(--warning); font-size: 16px;">ORDEN DE PAGO #<span id="orden-id">---</span></h4>
+                    <p style="font-size: 12px; color: #444; font-weight: bold; text-transform: uppercase;">Estado: En Auditoría de Equipo</p>
+                    <p style="font-size: 11px; color: #777; line-height: 1.4;">
+                        El equipo técnico está conciliando la referencia <b id="ref-confirmada">---</b><br>
+                        vía <b id="metodo-confirmado">---</b>.
+                    </p>
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 10px; color: #999;">
+                        Esta operación ha sido registrada en el log del Nodo Central.
+                    </div>
+                </div>
             </div>
 
             <a href="index.html" id="access-map-btn">
-                <i class="fa-solid fa-map-location-dot"></i> ENTRAR AL VISOR DE MAPAS
+                <i class="fa-solid fa-map-location-dot"></i> ACCEDER AL SISTEMA FISCAL
             </a>
 
         </div>
@@ -302,46 +224,58 @@
 </div>
 
 <script>
-    // 1. Simulación de Login (Luego lo conectaremos a tu auth.json)
+    // 1. Lógica de Login
     function validarLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
 
         if(user !== "" && pass !== "") {
+            document.getElementById('display-user').innerText = "USUARIO: " + user.toUpperCase();
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
         } else {
-            alert("Ingrese sus credenciales de nodo municipal.");
+            alert("Acceso denegado. Verifique sus credenciales de Nodo.");
         }
     }
 
-    // 2. Abrir formulario de pago
+    // 2. Abrir Formulario de Pago
     function abrirPago(tipo) {
-        document.getElementById('pago-titulo').innerText = "Reportar " + tipo;
+        document.getElementById('pago-titulo').innerText = "Generar " + tipo;
         document.getElementById('payment-area').style.display = 'block';
         document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
     }
 
-    // 3. Feedback visual del archivo
-    function actualizarNombreArchivo() {
-        const file = document.getElementById('captureFile').files[0];
-        if(file) document.getElementById('file-label').innerText = "Imagen: " + file.name;
-    }
-
-    // 4. Lógica de envío (Simulada para tu flujo)
+    // 3. Procesar Orden de Pago (Interactiva)
     function procesarPago() {
         const ref = document.getElementById('refBancaria').value;
-        if(ref === "") return alert("Por favor ingrese la referencia bancaria.");
+        const metodo = document.getElementById('metodoPago').value;
+        
+        if(ref === "") return alert("Debe ingresar la referencia para validar la firma.");
 
-        // Cambiar estatus a "PROCESANDO"
+        // Generar ID de Orden Profesional
+        const numOrden = "SGF-" + (Math.floor(Math.random() * 900000) + 100000);
+        
+        // Inyectar datos en la vista de verificación
+        document.getElementById('orden-id').innerText = numOrden;
+        document.getElementById('metodo-confirmado').innerText = metodo;
+        document.getElementById('ref-confirmada').innerText = ref;
+
+        // Cambiar interfaz
+        document.getElementById('form-inner').style.display = 'none';
+        document.getElementById('verifying-display').style.display = 'block';
+        
+        // Cambiar Semáforo
         const indicator = document.getElementById('status-indicator');
         indicator.className = "status-pill proximo";
-        indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><br>VERIFICANDO...';
-        
-        document.getElementById('payment-area').style.display = 'none';
-        alert("Reporte enviado exitosamente. El Administrador validará su pago en breve.");
+        indicator.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
 
-        // NOTA: Aquí es donde el script enviará los datos a tu repositorio secreto.
+        alert("Orden de Pago #" + numOrden + " recibida. El equipo de auditoría validará los fondos en breve.");
+    }
+
+    // 4. Actualizar nombre de archivo
+    function actualizarNombreArchivo() {
+        const file = document.getElementById('captureFile').files[0];
+        if(file) document.getElementById('file-label').innerText = "Comprobante: " + file.name;
     }
 </script>
 
