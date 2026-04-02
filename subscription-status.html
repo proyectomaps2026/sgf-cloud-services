@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF-CLOUD | SERVICIO SUSPENDIDO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --danger: #ff4b2b; --success: #00ff41; --bg: #0f0f0f; --card: #1a1a1a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        
+        /* Efecto de fondo de Mapa bloqueado */
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://w0.peakpx.com/wallpaper/105/233/HD-wallpaper-dark-grid-dark-abstract-black.jpg'); opacity: 0.2; z-index: -1; filter: blur(5px); }
+
+        .container { background: var(--card); border: 1px solid #333; border-radius: 15px; width: 90%; max-width: 500px; padding: 40px; text-align: center; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-top: 5px solid var(--danger); }
+
+        .icon-lock { font-size: 60px; color: var(--danger); margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        h1 { font-size: 24px; margin: 0; letter-spacing: 2px; color: #fff; }
+        p { color: #aaa; font-size: 14px; margin-top: 10px; line-height: 1.6; }
+
+        .status-badge { background: rgba(255, 75, 43, 0.1); color: var(--danger); padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 20px; border: 1px solid var(--danger); }
+
+        .payment-options { display: grid; gap: 15px; margin-top: 30px; }
+
+        .pay-btn { display: flex; align-items: center; justify-content: center; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 16px; transition: 0.3s; border: 1px solid transparent; cursor: pointer; }
+        
+        .binance { background: #f3ba2f; color: #000; }
+        .binance:hover { background: #e2ab26; transform: translateY(-3px); }
+        
+        .paypal { background: #003087; color: #fff; }
+        .paypal:hover { background: #00246b; transform: translateY(-3px); }
+
+        .whatsapp { background: transparent; color: var(--success); border-color: var(--success); }
+        .whatsapp:hover { background: rgba(0, 255, 65, 0.1); transform: translateY(-3px); }
+
+        .pay-btn i { margin-right: 12px; font-size: 20px; }
+
+        /* Modal para QR */
+        #modalQR { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
+        .qr-card { background: white; padding: 20px; border-radius: 10px; text-align: center; color: #000; }
+        .qr-card img { width: 200px; height: 200px; }
+        .close-btn { margin-top: 20px; color: white; cursor: pointer; border-bottom: 1px solid white; }
+    </style>
+</head>
+<body>
+
+<div class="bg-overlay"></div>
+
+<div class="container">
+    <div class="icon-lock"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="status-badge">ACCESO RESTRINGIDO - NODO AYACUCHO</div>
+    <h1>SGF-CLOUD SERVICES</h1>
+    <p>La licencia de este visor cartográfico ha expirado. Para restablecer el acceso a los datos de recaudación y polígonos, por favor realice la renovación.</p>
+
+    <div class="payment-options">
+        <div class="pay-btn binance" onclick="showQR()">
+            <i class="fa-solid fa-coins"></i> Binance Pay / USDT
+        </div>
+
+        <a href="https://paypal.me/TU_USUARIO" target="_blank" class="pay-btn paypal">
+            <i class="fa-brands fa-paypal"></i> PayPal / Tarjeta
+        </a>
+
+        <a href="https://wa.me/584XXXXXXX?text=Hola%20Wolgfan,%20solicito%20renovación%20de%20licencia%20para%20el%20sistema%20SGF%20Colón." target="_blank" class="pay-btn whatsapp">
+            <i class="fa-brands fa-whatsapp"></i> Acuerdo con Administrador
+        </a>
+    </div>
+
+    <p style="font-size: 10px; margin-top: 30px; color: #555;">ID DE NODO: TACH-02-COLON | SERVER: SGF-AUTH-V4</p>
+</div>
+
+<div id="modalQR">
+    <div class="qr-card">
+        <h3>Escanea para pagar</h3>
+        <img src="TU_URL_DE_IMAGEN_QR_AQUI" alt="QR Binance">
+        <p><strong>Pay ID:</strong> 123456789</p>
+    </div>
+    <div class="close-btn" onclick="hideQR()">Cerrar Ventana</div>
+</div>
+
+<script>
+    function showQR() { document.getElementById('modalQR').style.display = 'flex'; }
+    function hideQR() { document.getElementById('modalQR').style.display = 'none'; }
+</script>
+
+</body>
+</html>
