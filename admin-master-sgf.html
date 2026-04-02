@@ -2,203 +2,186 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF MASTER CONTROL | Terminal de Inteligencia</title>
+    <title>SGF ADMIN MASTER | Control de Nodo</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --master-bg: #0a0e14; 
-            --panel-bg: #151c26; 
-            --accent: #00e676; 
-            --danger: #ff5252; 
-            --warning: #f57c00;
-            --text: #e0e0e0; 
-            --card-hover: #1c2533;
-        }
-        
+        /* ESTILO ORIGINAL: LIMPIO Y CORPORATIVO */
         body { 
             font-family: 'Segoe UI', sans-serif; 
-            background: var(--master-bg); 
-            color: var(--text); 
+            background: #f4f7f6; 
+            color: #333; 
             margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
+            padding: 20px; 
         }
-        
-        /* --- ACCESO RESTRINGIDO (LOCKSCREEN) --- */
-        #master-lock { 
-            text-align: center; 
-            background: var(--panel-bg); 
-            padding: 60px 40px; 
-            border-radius: 24px; 
-            border: 1px solid #2d3748; 
-            width: 100%; 
-            max-width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        .master-container { 
+            max-width: 1000px; 
+            margin: auto; 
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
-        .lock-icon { font-size: 60px; color: var(--danger); margin-bottom: 25px; filter: drop-shadow(0 0 10px rgba(255,82,82,0.4)); }
-        
-        input[type="password"] { 
-            width: 100%; padding: 18px; background: #0a0e14; border: 1px solid #333; 
-            color: var(--accent); border-radius: 12px; text-align: center; font-size: 24px; 
-            letter-spacing: 6px; margin-bottom: 25px; box-sizing: border-box;
-            outline: none; transition: 0.3s;
-        }
-        input[type="password"]:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(0,230,118,0.2); }
-
-        .btn-unlock { 
-            background: var(--danger); color: white; border: none; padding: 18px; 
-            border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; 
-            text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
-        }
-        .btn-unlock:hover { transform: scale(1.02); background: #ff1744; }
-
-        /* --- PANEL DE AUDITORÍA (INTERFACE) --- */
-        #master-panel { display: none; width: 100%; max-width: 1000px; padding: 30px; align-self: flex-start; margin-top: 40px; }
-        
         .header { 
-            display: flex; justify-content: space-between; align-items: flex-end; 
-            border-bottom: 2px solid #1f2937; padding-bottom: 25px; margin-bottom: 40px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 20px; 
+            margin-bottom: 20px;
         }
-        
-        .grid-auditoria { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        
-        .card-auditoria { 
-            background: var(--panel-bg); padding: 30px; border-radius: 20px; 
-            border: 1px solid #2d3748; display: flex; justify-content: space-between; 
-            align-items: center; transition: 0.4s; position: relative; overflow: hidden;
+        .header h1 { 
+            color: #1a237e; 
+            margin: 0; 
+            font-size: 24px; 
         }
-        .card-auditoria:hover { border-color: var(--accent); background: var(--card-hover); transform: translateY(-3px); }
-        .card-auditoria::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 5px; background: var(--warning); }
 
-        .info-fiscal b { color: var(--accent); font-size: 20px; display: block; margin-bottom: 8px; letter-spacing: 1px; }
-        .info-fiscal p { margin: 5px 0; font-size: 14px; color: #8892b0; display: flex; align-items: center; gap: 10px; }
-        
-        .btn-check { 
-            background: #1f2937; color: white; padding: 12px 20px; 
-            border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;
-            display: inline-block; margin-top: 15px; border: 1px solid #334155; transition: 0.3s;
+        /* GRID DE PETICIONES ORIGINAL */
+        .grid-peticiones { 
+            display: grid; 
+            gap: 15px; 
+            margin-top: 20px; 
         }
-        .btn-check:hover { background: #007bff; border-color: #007bff; }
+        .card-pago { 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 1px solid #e0e0e0; 
+            transition: 0.3s;
+        }
+        .card-pago:hover {
+            border-color: #1a237e;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .info-pago b { 
+            color: #d32f2f; 
+            font-size: 18px; 
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info-pago p { 
+            margin: 5px 0; 
+            font-size: 13px; 
+            color: #666; 
+        }
+        
+        /* BOTONES ORIGINALES */
+        .btn-view { 
+            background: #e8eaf6; 
+            color: #1a237e; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            font-size: 12px; 
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .btn-view:hover { background: #c5cae9; }
 
         .btn-activate { 
-            background: var(--accent); color: #0a0e14; border: none; 
-            padding: 18px 35px; border-radius: 14px; font-weight: 900; 
-            cursor: pointer; text-transform: uppercase; transition: 0.3s;
-            box-shadow: 0 10px 20px rgba(0,230,118,0.15);
+            background: #00c853; 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 14px;
+            transition: 0.2s;
         }
-        .btn-activate:hover { transform: scale(1.05); box-shadow: 0 15px 30px rgba(0,230,118,0.25); }
+        .btn-activate:hover { background: #00a042; transform: scale(1.05); }
 
-        .badge-pendiente { 
-            background: rgba(245, 124, 0, 0.1); color: var(--warning); 
-            padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800;
-            border: 1px solid var(--warning); margin-left: 10px;
+        .status-badge { 
+            background: #fff3e0; 
+            color: #ef6c00; 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            font-size: 10px; 
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 10px;
         }
 
-        #peticiones-count {
-            background: var(--danger); padding: 8px 18px; border-radius: 30px; 
-            font-size: 13px; font-weight: 900; box-shadow: 0 0 20px rgba(255,82,82,0.3);
-        }
+        #stats { font-size: 14px; color: #666; }
+        #count { color: #d32f2f; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="master-lock">
-        <div class="lock-icon"><i class="fa-solid fa-shield-virus"></i></div>
-        <h1 style="margin:0; font-size: 28px; letter-spacing: -1px;">SGF MASTER</h1>
-        <p style="font-size: 12px; color: #8892b0; margin: 10px 0 35px 0; text-transform: uppercase; letter-spacing: 2px;">Acceso Nivel: Administrador</p>
-        <input type="password" id="masterKey" placeholder="••••••••">
-        <button class="btn-unlock" onclick="verificarAcceso()">Desbloquear Consola</button>
+<div class="master-container">
+    <div class="header">
+        <h1><i class="fa-solid fa-tower-broadcast"></i> ADMIN MASTER SGF</h1>
+        <div id="stats">Auditorías Pendientes: <span id="count">0</span></div>
     </div>
 
-    <div id="master-panel">
-        <div class="header">
-            <div>
-                <h1 style="margin:0; font-size: 32px; font-weight: 800;"><i class="fa-solid fa-microchip" style="color:var(--accent)"></i> PANEL DE CONTROL</h1>
-                <p style="margin:8px 0 0 0; font-size: 13px; color: #8892b0;">NODO TÁCHIRA | <span style="color:var(--accent)">CLOUD SYNC: drxiko8l4</span></p>
-            </div>
-            <div style="text-align: right;">
-                <span id="peticiones-count">0 ÓRDENES PENDIENTES</span>
-                <p style="font-size: 10px; color: #444; margin-top: 10px;">REFRESCO AUTOMÁTICO ACTIVO</p>
-            </div>
-        </div>
-
-        <div id="lista-auditoria" class="grid-auditoria">
-            </div>
+    <div id="lista-peticiones" class="grid-peticiones">
+        <p id="msg-vacio" style="text-align:center; color:#999; margin-top:50px;">
+            <i class="fa-solid fa-circle-notch fa-spin"></i><br>
+            Esperando señales del portal de recaudación...
+        </p>
     </div>
+</div>
 
 <script>
-    const LLAVE_MAESTRA = "AURA2026"; 
-
-    function verificarAcceso() {
-        const pass = document.getElementById('masterKey').value;
-        if(pass === LLAVE_MAESTRA) {
-            document.getElementById('master-lock').style.display = 'none';
-            document.getElementById('master-panel').style.display = 'block';
-            iniciarMonitor();
-        } else {
-            alert("ACCESO DENEGADO: Credenciales Inválidas.");
-            document.getElementById('masterKey').value = "";
-        }
-    }
-
-    function iniciarMonitor() {
-        renderizarLista();
-        setInterval(renderizarLista, 5000); // Escaneo constante cada 5s
-    }
-
-    function renderizarLista() {
+    function cargarBandeja() {
+        // Obtenemos los datos del cable compartido
         const bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
-        const contenedor = document.getElementById('lista-auditoria');
-        const contador = document.getElementById('peticiones-count');
+        const contenedor = document.getElementById('lista-peticiones');
+        const contador = document.getElementById('count');
+        
+        if(bandeja.length > 0) {
+            document.getElementById('msg-vacio').style.display = 'none';
+            contador.innerText = bandeja.length;
+            contenedor.innerHTML = ''; // Limpiar para refrescar
 
-        contador.innerText = `${bandeja.length} ÓRDENES PENDIENTES`;
+            bandeja.reverse().forEach((pago, index) => {
+                // Generamos el link de tu Cloudinary drxiko8l4
+                const linkFoto = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${pago.id}.jpg`;
 
-        if(bandeja.length === 0) {
-            contenedor.innerHTML = `
-                <div style="text-align:center; padding:100px; color:#2d3748; background:rgba(255,255,255,0.02); border-radius:20px; border:1px dashed #2d3748;">
-                    <i class="fa-solid fa-satellite-dish" style="font-size:50px; margin-bottom:20px; display:block;"></i>
-                    <p style="font-weight:600; letter-spacing:1px;">ESPERANDO SEÑALES DE RECAUDACIÓN...</p>
-                </div>`;
-            return;
-        }
-
-        contenedor.innerHTML = '';
-        bandeja.reverse().forEach((pago, index) => {
-            // Generamos el link directo a Cloudinary drxiko8l4
-            const linkCloud = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${pago.id}.jpg`;
-            
-            contenedor.innerHTML += `
-                <div class="card-auditoria">
-                    <div class="info-fiscal">
-                        <b>${pago.id} <span class="badge-pendiente">AUDITORÍA</span></b>
-                        <p><i class="fa-solid fa-money-bill-transfer" style="color:var(--accent)"></i> MÉTODO: ${pago.metodo}</p>
-                        <p><i class="fa-solid fa-fingerprint" style="color:var(--accent)"></i> REF: ${pago.referencia}</p>
-                        <a href="${linkCloud}" target="_blank" class="btn-check">
-                            <i class="fa-solid fa-magnifying-glass-dollar"></i> AUDITAR COMPROBANTE CLOUDINARY
-                        </a>
-                    </div>
-                    <div class="acciones">
-                        <button class="btn-activate" onclick="validarOrden('${pago.id}', ${index})">
+                contenedor.innerHTML += `
+                    <div class="card-pago">
+                        <div class="info-pago">
+                            <b>ORDEN: ${pago.id} <span class="status-badge">PENDIENTE</span></b>
+                            <p><i class="fa-solid fa-university"></i> MÉTODO: ${pago.metodo}</p>
+                            <p><i class="fa-solid fa-hashtag"></i> REF: ${pago.referencia}</p>
+                            <a href="${linkFoto}" target="_blank" class="btn-view">
+                                <i class="fa-solid fa-image"></i> VER COMPROBANTE CLOUDINARY
+                            </a>
+                        </div>
+                        <button class="btn-activate" onclick="activarLicencia('${pago.id}', ${index})">
                             <i class="fa-solid fa-bolt"></i> ACTIVAR NODO
                         </button>
                     </div>
-                </div>
-            `;
-        });
-    }
-
-    function validarOrden(id, index) {
-        if(confirm("¿AUTORIZAR ACTIVACIÓN PARA LA ORDEN " + id + "?\nEsta acción liberará las capas fiscales del usuario.")) {
-            let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
-            bandeja.splice(index, 1); 
-            localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
-            
-            alert("PROTOCOLO EJECUTADO: Nodo " + id + " ahora está activo.");
-            renderizarLista();
+                `;
+            });
+        } else {
+            document.getElementById('msg-vacio').style.display = 'block';
+            contador.innerText = "0";
+            contenedor.innerHTML = ''; 
         }
     }
+
+    function activarLicencia(id, index) {
+        if(confirm("¿Confirmas que el pago de la Orden " + id + " está conciliado en banco?")) {
+            // Sacamos la orden de la bandeja
+            let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+            bandeja.splice(index, 1);
+            localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
+            
+            alert("PROTOCOLO ACTIVADO: La licencia " + id + " ha sido liberada.");
+            cargarBandeja();
+        }
+    }
+
+    // Escuchar el cable cada 5 segundos
+    setInterval(cargarBandeja, 5000);
+    cargarBandeja();
 </script>
 </body>
 </html>
