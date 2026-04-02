@@ -29,7 +29,7 @@
         .logo-header { font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1px; }
         .subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 14px; font-weight: 500; }
         .input-group { margin-bottom: 15px; max-width: 350px; margin-left: auto; margin-right: auto; }
-        input[type="text"], input[type="password"] {
+        input[type="text"], input[type="password"], select {
             width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;
         }
         .btn-main {
@@ -60,20 +60,21 @@
 
         /* AREA DE PAGO INTERACTIVA */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
-        
-        /* BLOQUE BONITO DE CUENTAS (RESTAURADO) */
         .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .bank-card { padding: 12px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; }
         
         .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600; }
         .file-upload input { display: none; }
-        .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #verifying-display { display: none; text-align: center; padding: 30px; background: #fffcf0; border-radius: 12px; border: 1px solid #ffe082; }
+        .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+
+        /* PANTALLA DE CARGA DINÁMICA (RESTAURADA) */
+        #verifying-display { display: none; text-align: center; padding: 30px; border: 1px solid #ffe082; background: #fffcf0; border-radius: 12px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">NODO CENTRAL DE INTELIGENCIA FISCAL</div>
@@ -93,18 +94,18 @@
                 <div class="card-box" style="border-top: 4px solid var(--danger);">
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido"><i class="fa-solid fa-lock"></i><br>LICENCIA INACTIVA</div>
-                    <p style="text-align: center; font-size: 12px; color: #777;">Licencia: <b>#SGF-2026</b> | Vence: <b>02/04/2026</b></p>
+                    <p style="text-align: center; font-size: 12px; color: #777;">Licencia API: <b style="color:var(--primary)">#SGF-2026</b><br>Vence: <b>02/04/2026</b></p>
                 </div>
 
                 <div class="card-box">
                     <h4>Gestión de Licencia API</h4>
                     <div class="action-item" onclick="abrirPago('Renovar')">
                         <div class="action-icon icon-red"><i class="fa-solid fa-key"></i></div>
-                        <div><b>Renovar Licencia API</b><br><small>Restablecer puente de datos.</small></div>
+                        <div class="action-info"><b>Renovar Licencia API</b><br><small>Restablecer el puente de datos.</small></div>
                     </div>
                     <div class="action-item" onclick="abrirPago('Extender')">
                         <div class="action-icon icon-yellow"><i class="fa-solid fa-key"></i></div>
-                        <div><b>Extender Licencia API</b><br><small>Continuidad de auditoría.</small></div>
+                        <div class="action-info"><b>Extender Licencia API</b><br><small>Garantizar continuidad.</small></div>
                     </div>
                 </div>
             </div>
@@ -122,24 +123,31 @@
                 </div>
 
                 <div id="form-inner">
-                    <select id="metodoPago" onchange="toggleCampos()" style="width:100%; padding:14px; border-radius:8px; margin-bottom:15px; border: 1px solid #ddd;">
+                    <select id="metodoPago" onchange="toggleCampos()" style="margin-bottom: 15px;">
                         <option value="Pago Móvil">Pago Móvil / Transferencia BS</option>
                         <option value="Binance Pay">Binance Pay (USDT)</option>
                         <option value="Efectivo / Acuerdo Directo">Efectivo / Acuerdo Directo</option>
                     </select>
+
                     <div id="campos-digitales">
-                        <input type="text" id="refBancaria" placeholder="Nro de Referencia" style="width:100%; padding:14px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px; box-sizing: border-box;">
+                        <input type="text" id="refBancaria" placeholder="Nro de Referencia" style="margin-bottom: 15px;">
                         <label class="file-upload">
                             <input type="file" id="captureFile" onchange="actualizarNombre()">
                             <i class="fa-solid fa-cloud-arrow-up"></i> <span id="file-label">Cargar Comprobante Digital</span>
                         </label>
                     </div>
-                    <button class="btn-success" onclick="procesarPago()">SOLICITAR VALIDACIÓN</button>
+
+                    <button class="btn-success" onclick="procesarPago()">SOLICITAR VALIDACIÓN DE FIRMA</button>
                 </div>
+
                 <div id="verifying-display">
-                    <i class="fa-solid fa-gear fa-spin" style="font-size: 40px; color: var(--warning);"></i>
-                    <h4 style="color:var(--warning)">ORDEN #<span id="orden-id">---</span></h4>
-                    <p style="font-size: 11px;">EN AUDITORÍA DE EQUIPO</p>
+                    <div style="position: relative; display: inline-block;">
+                        <i class="fa-solid fa-gear fa-spin" style="font-size: 40px; color: var(--warning);"></i>
+                        <i class="fa-solid fa-users-gear" style="position: absolute; top: 12px; left: 8px; font-size: 15px; color: var(--primary);"></i>
+                    </div>
+                    <h4 style="margin:15px 0 5px 0; color: var(--warning); font-size: 16px;">ORDEN DE PAGO #<span id="orden-id">---</span></h4>
+                    <p style="font-size: 12px; color: #444; font-weight: bold; text-transform: uppercase;">Estado: En Auditoría de Equipo</p>
+                    <p style="font-size: 11px; color: #777; line-height: 1.4;">El equipo técnico está conciliando la referencia <b id="ref-confirmada">---</b> vía <b id="metodo-confirmado">---</b>.</p>
                 </div>
             </div>
         </div>
@@ -151,7 +159,7 @@
         if(document.getElementById('userInput').value !== "" && document.getElementById('passInput').value !== "") {
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-        } else { alert("Acceso denegado."); }
+        }
     }
 
     function abrirPago(t) {
@@ -159,7 +167,7 @@
         document.getElementById('payment-area').style.display = 'block';
         document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
     }
-    
+
     function toggleCampos() {
         const esEf = document.getElementById('metodoPago').value === "Efectivo / Acuerdo Directo";
         document.getElementById('campos-digitales').style.display = esEf ? "none" : "block";
@@ -178,25 +186,34 @@
 
         if(m !== "Efectivo / Acuerdo Directo" && !r) return alert("Falta Referencia");
 
-        // CARGA A CLOUDINARY (INTEGRADA)
+        // --- CARGA A CLOUDINARY ---
         if(m !== "Efectivo / Acuerdo Directo" && f.files[0]) {
             const fd = new FormData();
             fd.append('file', f.files[0]);
             fd.append('upload_preset', 'ordenes');
             fd.append('public_id', `pago_${id}`);
-            // Tu Cloud Name: drxiko8l4
             fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd });
         }
 
+        // --- CABLE AL MASTER ---
+        const nuevaPeticion = { id: id, metodo: m, referencia: r || 'ACUERDO' };
+        let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+        bandeja.push(nuevaPeticion);
+        localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
+
+        // --- INTERFAZ DINÁMICA ---
         document.getElementById('orden-id').innerText = id;
+        document.getElementById('metodo-confirmado').innerText = m;
+        document.getElementById('ref-confirmada').innerText = r || 'TRÁMITE FÍSICO';
+        
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
         
-        // Semáforo Amarillo (Conciliando)
         const ind = document.getElementById('status-indicator');
         ind.className = "status-pill proximo";
         ind.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
-        alert("Orden #" + id + " enviada al Master.");
+        
+        alert("Orden #" + id + " enviada al equipo de auditoría.");
     }
 </script>
 </body>
