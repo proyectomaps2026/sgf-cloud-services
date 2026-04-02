@@ -78,7 +78,7 @@
         .action-info b { display: block; font-size: 14px; color: var(--text-main); }
         .action-info span { font-size: 11px; color: #888; }
 
-        /* Area de Pago e Interactividad */
+        /* Area de Pago */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
         .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .bank-card { padding: 12px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; }
@@ -135,7 +135,7 @@
                 <div class="card-box" style="border-top: 4px solid var(--danger);">
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">
-                        <i class="fa-solid fa-lock"></i><br>NODO INACTIVO
+                        <i class="fa-solid fa-lock"></i><br>LICENCIA INACTIVA
                     </div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
                         Licencia API: <b style="color:var(--primary)">#SGF-2026-FISC</b><br>
@@ -144,21 +144,21 @@
                 </div>
 
                 <div class="card-box">
-                    <h4>Validación de Acceso API</h4>
+                    <h4>Gestión de Licencia API</h4>
                     
-                    <div class="action-item" onclick="abrirPago('Renovación de Firma')">
+                    <div class="action-item" onclick="abrirPago('Renovación de Licencia API')">
                         <div class="action-icon icon-red"><i class="fa-solid fa-key"></i></div>
                         <div class="action-info">
-                            <b>Renovar Firma Digital</b>
+                            <b>Renovar Licencia API</b>
                             <span>Restablecer el puente de datos tributarios.</span>
                         </div>
                     </div>
 
-                    <div class="action-item" onclick="abrirPago('Extensión Preventiva')">
+                    <div class="action-item" onclick="abrirPago('Extensión Licencia API')">
                         <div class="action-icon icon-yellow"><i class="fa-solid fa-shield-halved"></i></div>
                         <div class="action-info">
-                            <b>Mantenimiento de Soporte</b>
-                            <span>Extender vigencia de auditoría cartográfica.</span>
+                            <b>Extender Licencia API</b>
+                            <span>Garantizar continuidad de auditoría cartográfica.</span>
                         </div>
                     </div>
                 </div>
@@ -174,7 +174,7 @@
                     </div>
                     <div class="bank-card" style="border-left: 3px solid #f3ba2f; background: #fffdf0;">
                         <strong style="color:#8a6d1c">BINANCE PAY (USDT)</strong><br>
-                        ID Merchant: 987654321<br>Red: TRC20 / BEP20
+                        ID Merchant: 987654321<br>Usuario: SGF_Cloud_Audit
                     </div>
                 </div>
 
@@ -184,7 +184,7 @@
                         <select id="metodoPago">
                             <option value="Pago Móvil / Transferencia">Pago Móvil / Transferencia BS</option>
                             <option value="Binance Pay (USDT)">Binance Pay (USDT)</option>
-                            <option value="Efectivo / Acuerdo Directo">Acuerdo Directo (Efectivo)</option>
+                            <option value="Efectivo / Acuerdo Directo">Efectivo / Acuerdo Directo</option>
                         </select>
                     </div>
 
@@ -224,11 +224,9 @@
 </div>
 
 <script>
-    // 1. Lógica de Login
     function validarLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-
         if(user !== "" && pass !== "") {
             document.getElementById('display-user').innerText = "USUARIO: " + user.toUpperCase();
             document.getElementById('login-section').style.display = 'none';
@@ -238,33 +236,30 @@
         }
     }
 
-    // 2. Abrir Formulario de Pago
     function abrirPago(tipo) {
         document.getElementById('pago-titulo').innerText = "Generar " + tipo;
         document.getElementById('payment-area').style.display = 'block';
         document.getElementById('payment-area').scrollIntoView({behavior: 'smooth'});
     }
 
-    // 3. Procesar Orden de Pago (Interactiva)
     function procesarPago() {
         const ref = document.getElementById('refBancaria').value;
         const metodo = document.getElementById('metodoPago').value;
         
-        if(ref === "") return alert("Debe ingresar la referencia para validar la firma.");
+        // Si el método es efectivo, puede que no tengan referencia, pero igual activamos la auditoría
+        if(ref === "" && metodo !== "Efectivo / Acuerdo Directo") {
+            return alert("Debe ingresar la referencia para validar la firma.");
+        }
 
-        // Generar ID de Orden Profesional
         const numOrden = "SGF-" + (Math.floor(Math.random() * 900000) + 100000);
         
-        // Inyectar datos en la vista de verificación
         document.getElementById('orden-id').innerText = numOrden;
         document.getElementById('metodo-confirmado').innerText = metodo;
-        document.getElementById('ref-confirmada').innerText = ref;
+        document.getElementById('ref-confirmada').innerText = ref || "ACUERDO DIRECTO";
 
-        // Cambiar interfaz
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
         
-        // Cambiar Semáforo
         const indicator = document.getElementById('status-indicator');
         indicator.className = "status-pill proximo";
         indicator.innerHTML = '<i class="fa-solid fa-user-shield"></i><br>CONCILIANDO...';
@@ -272,7 +267,6 @@
         alert("Orden de Pago #" + numOrden + " recibida. El equipo de auditoría validará los fondos en breve.");
     }
 
-    // 4. Actualizar nombre de archivo
     function actualizarNombreArchivo() {
         const file = document.getElementById('captureFile').files[0];
         if(file) document.getElementById('file-label').innerText = "Comprobante: " + file.name;
