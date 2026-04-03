@@ -86,6 +86,11 @@
         .img-container:hover .img-thumb { border-color: var(--primary); }
         .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); right: 60px; top: -150px; background: #111; }
         .img-container:hover .img-preview { display: block; }
+        
+        .licencia-box { margin-top: 15px; background: #000; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); }
+        .licencia-box label { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; }
+        .licencia-box textarea { background: transparent; border: none; color: var(--success); font-family: monospace; font-size: 11px; padding: 5px 0; margin: 0; height: 60px; resize: none; cursor: pointer; word-break: break-all; }
+        .licencia-box textarea:focus { outline: none; }
     </style>
 </head>
 <body>
@@ -174,11 +179,16 @@
         <h3>Aprobar y Generar Licencia</h3>
         <p style="font-size:12px; color:#888; margin-bottom: 10px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
         
-        <select id="dias_extension">
+        <select id="dias_extension" onchange="actualizarVistaLicencia()">
             <option value="30">Licencia Mensual (+30 Días)</option>
             <option value="90">Licencia Trimestral (+90 Días)</option>
-            <option value="365">Licencia Anual (+365 Días)</option>
+            <option value="180">Licencia Semestral (+180 Días)</option>
         </select>
+        
+        <div class="licencia-box">
+            <label><i class="fa-solid fa-key"></i> Licencia Generada (Clic para Copiar)</label>
+            <textarea id="licencia_output" readonly onclick="this.select(); document.execCommand('copy'); showToast('Licencia copiada al portapapeles', 'info');"></textarea>
+        </div>
         
         <input type="hidden" id="token_order_id">
         <input type="hidden" id="token_user_id">
@@ -268,7 +278,7 @@
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
                 mode: "cors",
-                cache: "no-store", // Evita cache local sin forzar CORS preflight reject
+                cache: "no-store",
                 headers: { 
                     "Accept": "application/vnd.github.v3+json",
                     "Authorization": `token ${realKey}`
@@ -294,7 +304,6 @@
         } catch (error) {
             statusInd.className = 'status-offline';
             statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Red (Fetch)`;
-            console.error("Carga Nube Error:", error);
         }
     }
 
@@ -313,7 +322,6 @@
         const realKey = semillaRevertida.split('').reverse().join('');
 
         try {
-            // PASO 1: RESCATE DE SHA CON HEADERS LIMPIOS
             const getRes = await fetch(GITHUB_API_URL, {
                 method: "GET",
                 mode: "cors",
@@ -327,7 +335,6 @@
             const dataGet = await getRes.json();
             const freshSha = dataGet.sha;
 
-            // PASO 2: PREPARAR EL PAQUETE
             const payloadToUpload = {
                 cloud_access: semillaRevertida,
                 usuarios: sgfConfig.usuarios,
@@ -335,7 +342,6 @@
             };
             const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
-            // PASO 3: ESCRITURA FINAL CON CORS ENABLED
             const putRes = await fetch(GITHUB_API_URL, {
                 method: "PUT",
                 mode: "cors",
@@ -365,7 +371,6 @@
             showToast("Fetch Error: " + error.message, "error");
             btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error de Red';
             btn.style.backgroundColor = '#d32f2f';
-            console.error("Sync Error:", error);
         }
 
         setTimeout(() => {
@@ -375,20 +380,38 @@
     }
 
     /* =====================================================================
-       B. GENERADOR DE LICENCIAS (PRODUCTO SGF)
+       B. GENERADOR DE LICENCIAS ENCRIPTADAS (PACKAGER SGF)
        ===================================================================== */
     function generarLicencia(userId, dias) {
+        // 1. Calcular Fecha Exacta
         let d = new Date();
         d.setDate(d.getDate() + dias);
         let year = d.getFullYear();
         let month = String(d.getMonth() + 1).padStart(2, '0');
         let day = String(d.getDate()).padStart(2, '0');
-        let fechaSTR = `${year}${month}${day}`;
+        let fechaSTR = `${year}-${month}-${day}`;
 
+        // 2. Extraer Token Revertido (Memoria Segura)
+        let tokenRevert = localStorage.getItem('semilla_revert') || "TKN_MISSING";
+
+        // 3. Proceso de Encriptación Interna
+        let fechaCodificada = btoa(fechaSTR); // Base64 de la fecha
+        let payload = `${tokenRevert}|${fechaCodificada}`; // Mezcla [TOKEN] | [FECHA]
+        let codigoEncriptadoFinal = btoa(payload); // Base64 de todo el paquete
+
+        // 4. Formato Profesional de Salida
         let idPart = userId.substring(0, 4).toUpperCase().padEnd(4, 'X');
-        let hexPart = btoa(`${userId}-${fechaSTR}`).replace(/=/g, '').toUpperCase().substring(0, 8);
+        return `SGF-${idPart}-${codigoEncriptadoFinal}`;
+    }
 
-        return `SGF-${idPart}-${year}-${hexPart}`;
+    function actualizarVistaLicencia() {
+        const userId = document.getElementById('token_user_id').value;
+        const dias = parseInt(document.getElementById('dias_extension').value);
+        if(!userId) return;
+        
+        // Auto-Genera y muestra en el Textarea
+        const lic = generarLicencia(userId, dias);
+        document.getElementById('licencia_output').value = lic;
     }
 
     function calcularEstadoUser(usr) {
@@ -431,7 +454,11 @@
                 count++;
                 const idUser = usr.id || `ID-${nombreUser.toUpperCase()}-2026`;
                 const passUser = usr.p || '---';
-                const userTkn = usr.t || '---';
+                
+                // Mostrar solo un extracto de la licencia si es muy larga
+                let userTkn = usr.t || '---';
+                let tknDisplay = userTkn.length > 25 ? userTkn.substring(0,25) + "..." : userTkn;
+
                 const vencimientoUser = usr.vencimiento || "2026-12-31";
                 
                 let objEstado = calcularEstadoUser(usr);
@@ -447,7 +474,7 @@
                         <td><b style="color:white; font-size:14px;">${nombreUser.toUpperCase()}</b></td>
                         <td>
                             <code style="color:var(--primary); font-size:12px;">User: ${nombreUser} | Pass: ${passUser}</code><br>
-                            <code style="color:var(--success); font-size:11px;">Licencia: ${userTkn}</code>
+                            <code style="color:var(--success); font-size:10px;" title="${userTkn}">Key: ${tknDisplay}</code>
                         </td>
                         <td>${portalStatus}</td>
                         <td style="color:#aaa;">${fechaMostrada}</td>
@@ -500,7 +527,7 @@
             return showToast("Este usuario ya existe.", "warning");
         }
 
-        let d = new Date(); d.setDate(d.getDate() + 365);
+        let d = new Date(); d.setDate(d.getDate() + 30); // 30 Días por Defecto
         let venc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
         sgfConfig.usuarios.push({ 
@@ -510,7 +537,7 @@
             vencimiento: venc,
             u: u, 
             p: p || 'admin', 
-            t: generarLicencia(u, 365) 
+            t: generarLicencia(u, 30) // Empaquetador Inicial (30 Días)
         });
 
         saveDB(); 
@@ -564,6 +591,10 @@
         document.getElementById('lbl-token-user').innerText = userName.toUpperCase();
         document.getElementById('token_order_id').value = orderId;
         document.getElementById('token_user_id').value = userName;
+        document.getElementById('dias_extension').value = "30"; // Reset Dropdown
+        
+        actualizarVistaLicencia(); // Auto Generar
+        
         openModal('modalToken');
     }
 
@@ -573,6 +604,7 @@
         const userId = document.getElementById('token_user_id').value;
         const orderId = document.getElementById('token_order_id').value;
         const dias = parseInt(document.getElementById('dias_extension').value);
+        const licenciaFinalGenerada = document.getElementById('licencia_output').value;
 
         const usrIdx = sgfConfig.usuarios.findIndex(u => (u.u === userId || u.user === userId));
         if(usrIdx === -1) return;
@@ -584,7 +616,7 @@
         
         sgfConfig.usuarios[usrIdx].estado = "LIBRE";
         sgfConfig.usuarios[usrIdx].vencimiento = `${year}-${month}-${day}`;
-        sgfConfig.usuarios[usrIdx].t = generarLicencia(userId, dias); 
+        sgfConfig.usuarios[usrIdx].t = licenciaFinalGenerada; // Guardamos el Paquete Cifrado
 
         if (orderId !== "MANUAL") {
             const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
