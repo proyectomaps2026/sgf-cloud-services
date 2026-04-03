@@ -65,11 +65,13 @@
         .btn-danger:hover { background: #c00; }
         .btn-warning { background: var(--warning); color: #000; margin-right: 5px;}
         .btn-warning:hover { background: #e6b800; }
+        .btn-success { background: var(--success); color: #000; margin-right: 5px;}
+        .btn-success:hover { background: #00e676; }
         
         /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; margin-bottom: 10px; }
+        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 450px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
         
         /* Notificaciones Toast */
@@ -87,10 +89,12 @@
         .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); right: 60px; top: -150px; background: #111; }
         .img-container:hover .img-preview { display: block; }
         
-        .licencia-box { margin-top: 15px; background: #000; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); }
+        /* Fábrica Styles */
+        .licencia-box { background: #000; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 5px; }
         .licencia-box label { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; }
-        .licencia-box textarea { background: transparent; border: none; color: var(--success); font-family: monospace; font-size: 11px; padding: 5px 0; margin: 0; height: 60px; resize: none; cursor: pointer; word-break: break-all; }
+        .licencia-box textarea { background: transparent; border: none; color: var(--success); font-family: monospace; font-size: 11px; padding: 5px 0; margin: 0; height: 70px; resize: none; cursor: pointer; word-break: break-all; }
         .licencia-box textarea:focus { outline: none; }
+        .diagrama { font-size: 10px; color: #666; text-align: center; font-family: monospace; background: #111; padding: 10px; border-radius: 6px; border: 1px solid #222; }
     </style>
 </head>
 <body>
@@ -100,7 +104,7 @@
 <div class="sidebar">
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
     
-    <div id="sync-status"><i class="fa-solid fa-cloud"></i> Esperando Conexión...</div>
+    <div id="sync-status" class="status-warning"><i class="fa-solid fa-triangle-exclamation"></i> Requiere Sincronización Inicial</div>
 
     <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
@@ -173,30 +177,48 @@
     </div>
 </div>
 
-<!-- Modal Generador de Licencia -->
+<!-- NUEVO Modal Fábrica de Licencias -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
-        <h3>Aprobar y Generar Licencia</h3>
-        <p style="font-size:12px; color:#888; margin-bottom: 10px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
+        <h3>Fábrica de Licencias SGF (Mapa Pro)</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Generador Manual de Credenciales Encriptadas para: <b id="lbl-token-user" style="color:white;">---</b></p>
         
-        <select id="dias_extension" onchange="actualizarVistaLicencia()">
-            <option value="30">Licencia Mensual (+30 Días)</option>
-            <option value="90">Licencia Trimestral (+90 Días)</option>
-            <option value="180">Licencia Semestral (+180 Días)</option>
+        <textarea id="fabrica_token" placeholder="Pegue aquí el Nuevo Token de GitHub (ghp_...)" style="height: 60px; resize: none;"></textarea>
+        
+        <select id="dias_extension">
+            <option value="30">30 Días (Mensual)</option>
+            <option value="90">90 Días (Trimestral)</option>
+            <option value="180">180 Días (Semestral / 6 Meses)</option>
         </select>
         
-        <div class="licencia-box">
-            <label><i class="fa-solid fa-key"></i> Licencia Generada (Clic para Copiar)</label>
-            <textarea id="licencia_output" readonly onclick="this.select(); document.execCommand('copy'); showToast('Licencia copiada al portapapeles', 'info');"></textarea>
+        <button class="btn btn-primary" onclick="generarLicenciaFabrica()" style="width: 100%; justify-content: center; margin-top: 10px; padding: 14px; background: var(--primary);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> GENERAR LICENCIA ENCRIPTADA
+        </button>
+        
+        <!-- Panel Explicativo UI (Oculto hasta generar) -->
+        <div id="panel_licencia" style="display: none; margin-top: 20px;">
+            <div class="licencia-box">
+                <label><i class="fa-solid fa-key"></i> Licencia Lista (Clic para Copiar)</label>
+                <textarea id="licencia_output" readonly onclick="this.select(); document.execCommand('copy'); showToast('Licencia copiada al portapapeles', 'info');"></textarea>
+            </div>
+            
+            <div class="diagrama">
+                [ PREFIJO ] - [ USUARIO ] - [ TOKEN REVERTIDO ] - [ FECHA SECRETA ]
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn btn-success" onclick="aplicarYEnviarFabrica()" style="flex:1;"><i class="fa-solid fa-check-double"></i> APLICAR AL USUARIO</button>
+                <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
+            </div>
         </div>
         
+        <!-- Fallback actions iniciales -->
+        <div id="acciones_iniciales" style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-action" onclick="closeModal('modalToken')" style="flex:1">Cancelar Acción</button>
+        </div>
+
         <input type="hidden" id="token_order_id">
         <input type="hidden" id="token_user_id">
-
-        <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y LIBERAR</button>
-            <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
-        </div>
     </div>
 </div>
 
@@ -228,22 +250,23 @@
     }
 
     /* =====================================================================
-       VARIABLES GLOBALES Y MEMORIA
+       VARIABLES GLOBALES Y REGLA DE "EMPEZAR EN CERO"
        ===================================================================== */
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
     const dbKey = 'sgf_master_db_v29'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
     let currentSha = null; 
+    let isCleanSyncDone = false; // Kill-Switch: Bloquea lectura hasta la Sincronización Limpia
 
-    function loadDB() {
-        try {
-            let stored = localStorage.getItem(dbKey);
-            if(stored) sgfConfig = JSON.parse(atob(stored));
-            if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
-            if(!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
-        } catch(e) { 
-            sgfConfig = { usuarios: [], ordenes: [] };
-        }
+    function initYResetObligatorio() {
+        // RESET TOTAL: Vacía memoria, SHA, usuarios y órdenes pendientes.
+        currentSha = null;
+        sgfConfig = { usuarios: [], ordenes: [] };
+        localStorage.removeItem(dbKey);
+        
+        showToast("Sistema reseteado a Cero. Se requiere FORZAR ESCRITURA para limpiar la nube.", "warning");
+        renderTable();
+        renderHistorial();
     }
 
     function saveDB() {
@@ -268,6 +291,9 @@
        ===================================================================== */
 
     async function cargarDatosNube() {
+        // Regla: No lee la nube si no se ha hecho la Sincronización Limpia
+        if (!isCleanSyncDone) return; 
+
         const statusInd = document.getElementById('sync-status');
         const semillaRevertida = localStorage.getItem('semilla_revert');
         if (!semillaRevertida) return;
@@ -298,12 +324,10 @@
                 saveDB();
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
-            } else {
-                throw new Error("Respuesta no OK de GitHub");
             }
         } catch (error) {
             statusInd.className = 'status-offline';
-            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Red (Fetch)`;
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Red`;
         }
     }
 
@@ -317,7 +341,7 @@
             return showToast("Error: Configure la Llave GitHub primero.", "error");
         }
 
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inyectando Cero...';
         btn.style.backgroundColor = '#f57c00';
         const realKey = semillaRevertida.split('').reverse().join('');
 
@@ -351,7 +375,7 @@
                     "Content-Type": "application/json" 
                 },
                 body: JSON.stringify({
-                    message: "SGF Master: Sincronización de Licencias de Mapa",
+                    message: "SGF Master: Sincronización Limpia y Escritura de Nube",
                     content: contentBase64,
                     sha: freshSha
                 })
@@ -360,9 +384,13 @@
             if (putRes.ok) {
                 const putData = await putRes.json();
                 currentSha = putData.content.sha; 
-                showToast("Nube Actualizada Correctamente", "success");
+                isCleanSyncDone = true; // Desbloquea la lectura automática
+                
+                showToast("Sincronización Limpia Exitosa. Nube reseteada.", "success");
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Éxito';
                 btn.style.backgroundColor = '#00c853';
+                document.getElementById('sync-status').className = 'status-online';
+                document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
             } else {
                 const err = await putRes.json();
                 throw new Error(err.message);
@@ -380,40 +408,89 @@
     }
 
     /* =====================================================================
-       B. GENERADOR DE LICENCIAS ENCRIPTADAS (PACKAGER SGF)
+       FÁBRICA DE LICENCIAS Y ENCRIPTACIÓN (EL ALGORITMO)
        ===================================================================== */
-    function generarLicencia(userId, dias) {
-        // 1. Calcular Fecha Exacta
-        let d = new Date();
-        d.setDate(d.getDate() + dias);
+    function generarLicenciaFabrica() {
+        const rawToken = document.getElementById('fabrica_token').value.trim();
+        if (!rawToken || !rawToken.startsWith('ghp_')) {
+            return showToast('Por favor, pegue un token de GitHub válido (ghp_...).', 'warning');
+        }
+
+        const dias = parseInt(document.getElementById('dias_extension').value);
+        let userId = document.getElementById('token_user_id').value;
+        if (!userId) userId = "AURA"; 
+
+        // 1. REVERTIR EL TOKEN
+        const tokenRevert = rawToken.split('').reverse().join('');
+
+        // 2. CALCULAR Y ENCRIPTAR FECHA
+        let d = new Date(); d.setDate(d.getDate() + dias);
         let year = d.getFullYear();
         let month = String(d.getMonth() + 1).padStart(2, '0');
         let day = String(d.getDate()).padStart(2, '0');
         let fechaSTR = `${year}-${month}-${day}`;
+        let fechaEncriptada = btoa(fechaSTR).replace(/=/g, ''); // Base64 limpio
 
-        // 2. Extraer Token Revertido (Memoria Segura)
-        let tokenRevert = localStorage.getItem('semilla_revert') || "TKN_MISSING";
-
-        // 3. Proceso de Encriptación Interna
-        let fechaCodificada = btoa(fechaSTR); // Base64 de la fecha
-        let payload = `${tokenRevert}|${fechaCodificada}`; // Mezcla [TOKEN] | [FECHA]
-        let codigoEncriptadoFinal = btoa(payload); // Base64 de todo el paquete
-
-        // 4. Formato Profesional de Salida
+        // 3. MEZCLAR EL PAQUETE
         let idPart = userId.substring(0, 4).toUpperCase().padEnd(4, 'X');
-        return `SGF-${idPart}-${codigoEncriptadoFinal}`;
-    }
+        let licenciaFinal = `SGF-${idPart}-${tokenRevert}-${fechaEncriptada}`;
 
-    function actualizarVistaLicencia() {
-        const userId = document.getElementById('token_user_id').value;
-        const dias = parseInt(document.getElementById('dias_extension').value);
-        if(!userId) return;
+        // Mostrar Interfaz
+        document.getElementById('licencia_output').value = licenciaFinal;
+        document.getElementById('panel_licencia').style.display = 'block';
+        document.getElementById('acciones_iniciales').style.display = 'none';
         
-        // Auto-Genera y muestra en el Textarea
-        const lic = generarLicencia(userId, dias);
-        document.getElementById('licencia_output').value = lic;
+        showToast("Licencia Empaquetada Exitosamente.", "success");
     }
 
+    function aplicarYEnviarFabrica() {
+        const userId = document.getElementById('token_user_id').value;
+        const orderId = document.getElementById('token_order_id').value;
+        const dias = parseInt(document.getElementById('dias_extension').value);
+        const licenciaAplicada = document.getElementById('licencia_output').value;
+
+        const usrIdx = sgfConfig.usuarios.findIndex(u => (u.u === userId || u.user === userId));
+        if(usrIdx === -1) return;
+
+        let d = new Date(); d.setDate(d.getDate() + dias);
+        let year = d.getFullYear();
+        let month = String(d.getMonth()+1).padStart(2,'0');
+        let day = String(d.getDate()).padStart(2,'0');
+        
+        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
+        sgfConfig.usuarios[usrIdx].vencimiento = `${year}-${month}-${day}`;
+        sgfConfig.usuarios[usrIdx].t = licenciaAplicada; // Inyectar Licencia Fabricada
+
+        if (orderId && orderId !== "MANUAL") {
+            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
+            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
+        }
+        
+        saveDB(); 
+        closeModal('modalToken');
+        showToast(`Licencia aplicada a ${userId.toUpperCase()}.`, "info");
+        sincronizarConNube(); 
+    }
+
+    function abrirAprobacion(orderId, userName) {
+        document.getElementById('lbl-token-user').innerText = userName.toUpperCase();
+        document.getElementById('token_order_id').value = orderId;
+        document.getElementById('token_user_id').value = userName;
+        
+        // Reset Visual de la Fábrica
+        document.getElementById('fabrica_token').value = "";
+        document.getElementById('dias_extension').value = "30";
+        document.getElementById('panel_licencia').style.display = "none";
+        document.getElementById('acciones_iniciales').style.display = "flex";
+        
+        openModal('modalToken');
+    }
+
+    function prepararRenovacionManual(userName) { abrirAprobacion("MANUAL", userName); }
+
+    /* =====================================================================
+       RENDERIZADO DE TABLAS Y RESTO DE FUNCIONES
+       ===================================================================== */
     function calcularEstadoUser(usr) {
         let estadoUser = usr.estado || "LIBRE";
         
@@ -435,9 +512,6 @@
         }
     }
 
-    /* =====================================================================
-       RENDERIZADO DE TABLAS
-       ===================================================================== */
     function renderTable() {
         const list = document.getElementById('listaNodos');
         list.innerHTML = "";
@@ -455,7 +529,6 @@
                 const idUser = usr.id || `ID-${nombreUser.toUpperCase()}-2026`;
                 const passUser = usr.p || '---';
                 
-                // Mostrar solo un extracto de la licencia si es muy larga
                 let userTkn = usr.t || '---';
                 let tknDisplay = userTkn.length > 25 ? userTkn.substring(0,25) + "..." : userTkn;
 
@@ -513,9 +586,6 @@
         });
     }
 
-    /* =====================================================================
-       C. EL RESET DE USUARIO (ADMIN/ADMIN) Y OTRAS ACCIONES
-       ===================================================================== */
     function crearTerminal() {
         const u = document.getElementById('n_user').value.toLowerCase().trim();
         const p = document.getElementById('n_pass').value.trim();
@@ -527,17 +597,12 @@
             return showToast("Este usuario ya existe.", "warning");
         }
 
-        let d = new Date(); d.setDate(d.getDate() + 30); // 30 Días por Defecto
+        let d = new Date(); d.setDate(d.getDate() + 30); 
         let venc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
         sgfConfig.usuarios.push({ 
-            user: u, 
-            id: `ID-${u.toUpperCase()}-2026`, 
-            estado: "LIBRE", 
-            vencimiento: venc,
-            u: u, 
-            p: p || 'admin', 
-            t: generarLicencia(u, 30) // Empaquetador Inicial (30 Días)
+            user: u, id: `ID-${u.toUpperCase()}-2026`, estado: "LIBRE", vencimiento: venc, u: u, p: p || 'admin', 
+            t: "REQUIERE_NUEVA_LICENCIA_MANUAL" // Requiere que pases por la Fábrica
         });
 
         saveDB(); 
@@ -545,29 +610,23 @@
         document.getElementById('n_pass').value = 'admin';
         closeModal('modalNuevo'); 
         
-        showToast("Usuario creado. Sincronizando...", "info");
+        showToast("Usuario creado. Asigne licencia manualmente.", "info");
         sincronizarConNube(); 
     }
 
     function resetTerminal(userName) {
-        if(confirm(`¿RESET DE FÁBRICA a [${userName}]?\n\nLas credenciales de acceso volverán a ser admin/admin y se generará una licencia de prueba de 7 días.`)) {
+        if(confirm(`¿RESET DE FÁBRICA a [${userName}]?\nLas credenciales volverán a admin/admin y pedirá Licencia Nueva.`)) {
             const idx = sgfConfig.usuarios.findIndex(u => u.u === userName || u.user === userName);
             if(idx !== -1) {
-                let d = new Date();
-                d.setDate(d.getDate() + 7);
-                let year = d.getFullYear();
-                let month = String(d.getMonth()+1).padStart(2,'0');
-                let day = String(d.getDate()).padStart(2,'0');
-
                 sgfConfig.usuarios[idx].user = 'admin';
                 sgfConfig.usuarios[idx].u = 'admin';
                 sgfConfig.usuarios[idx].p = 'admin';
                 sgfConfig.usuarios[idx].estado = 'LIBRE';
-                sgfConfig.usuarios[idx].vencimiento = `${year}-${month}-${day}`;
-                sgfConfig.usuarios[idx].t = generarLicencia('admin', 7);
+                sgfConfig.usuarios[idx].vencimiento = `2000-01-01`; // Expirado a propósito
+                sgfConfig.usuarios[idx].t = "SGF-RESET-REQUIRED";
 
                 saveDB();
-                showToast(`Terminal ${userName} reseteado a fábrica.`, 'success');
+                showToast(`Terminal ${userName} reseteado.`, 'success');
                 sincronizarConNube();
             }
         }
@@ -585,46 +644,6 @@
             sgfConfig.ordenes = [];
             saveDB(); sincronizarConNube();
         }
-    }
-
-    function abrirAprobacion(orderId, userName) {
-        document.getElementById('lbl-token-user').innerText = userName.toUpperCase();
-        document.getElementById('token_order_id').value = orderId;
-        document.getElementById('token_user_id').value = userName;
-        document.getElementById('dias_extension').value = "30"; // Reset Dropdown
-        
-        actualizarVistaLicencia(); // Auto Generar
-        
-        openModal('modalToken');
-    }
-
-    function prepararRenovacionManual(userName) { abrirAprobacion("MANUAL", userName); }
-
-    function aprobarYEnviar() {
-        const userId = document.getElementById('token_user_id').value;
-        const orderId = document.getElementById('token_order_id').value;
-        const dias = parseInt(document.getElementById('dias_extension').value);
-        const licenciaFinalGenerada = document.getElementById('licencia_output').value;
-
-        const usrIdx = sgfConfig.usuarios.findIndex(u => (u.u === userId || u.user === userId));
-        if(usrIdx === -1) return;
-
-        let d = new Date(); d.setDate(d.getDate() + dias);
-        let year = d.getFullYear();
-        let month = String(d.getMonth()+1).padStart(2,'0');
-        let day = String(d.getDate()).padStart(2,'0');
-        
-        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
-        sgfConfig.usuarios[usrIdx].vencimiento = `${year}-${month}-${day}`;
-        sgfConfig.usuarios[usrIdx].t = licenciaFinalGenerada; // Guardamos el Paquete Cifrado
-
-        if (orderId !== "MANUAL") {
-            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
-            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
-        }
-        
-        saveDB(); closeModal('modalToken');
-        sincronizarConNube(); 
     }
 
     function abrirConfigCanal() {
@@ -646,13 +665,11 @@
         
         closeModal('modalConfig');
         showToast("Llave guardada. Inicializando...", "success");
-        cargarDatosNube(); 
     }
 
-    // Inicialización de Arranque
-    loadDB(); 
+    // ARRANQUE EN CERO OBLIGATORIO
+    initYResetObligatorio(); 
     showTab('clientes');
-    cargarDatosNube();
 </script>
 </body>
 </html>
