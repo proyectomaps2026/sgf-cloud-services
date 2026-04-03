@@ -20,24 +20,5 @@
             "t": "SGF-AURA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNS0wMw"
         }
     ],
-    "ordenes": [
-        {
-            "id": "ORD-127615",
-            "usuario": "aura",
-            "tramite": "Renovar Licencia Vencida",
-            "metodo": "binance",
-            "referencia": "77889866",
-            "fecha": "2026-04-03T21:17:26.764Z",
-            "estado": "Aprobada"
-        },
-        {
-            "id": "ORD-167369",
-            "usuario": "aura",
-            "tramite": "Actualizar Servicio Activo",
-            "metodo": "binance",
-            "referencia": "77889866",
-            "fecha": "2026-04-03T21:19:04.311Z",
-            "estado": "Pendiente"
-        }
-    ]
+    "ordenes": []
 }
