@@ -169,7 +169,7 @@
     </div>
 </div>
 
-<!-- Modal Generador de Licencia (Aprueba y Libera Portal) -->
+<!-- Modal Generador de Licencia -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
         <h3>Aprobar y Generar Licencia</h3>
@@ -193,7 +193,7 @@
     </div>
 </div>
 
-<!-- Modal Configuración de Canal (Revert Key) -->
+<!-- Modal Configuración de Canal -->
 <div id="modalConfig" class="modal">
     <div class="modal-content">
         <h3>Configuración de Canal (Nube)</h3>
@@ -236,9 +236,8 @@
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA LOCAL
        ===================================================================== */
-    const dbKey = 'sgf_master_db_v16'; // Versión actualizada para limpiar caché vieja
+    const dbKey = 'sgf_master_db_v17'; 
     let sgfConfig = { usuarios: [], ordenes: [], cloud_access: "", api_url: "" };
-    let currentSha = null;
 
     function loadDB() {
         try {
@@ -267,10 +266,10 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       MOTOR DE SINCRONIZACIÓN BIFÁSICO (Lectura y Escritura GitHub)
+       MOTOR DE SINCRONIZACIÓN (GET -> BASE64 -> PUT)
        ===================================================================== */
 
-    // TAREA DE FONDO: Lee la bandeja de entrada para detectar si Aura subió un pago.
+    // 1. TAREA DE FONDO (Polling / GET)
     async function syncDataFromRemote() {
         if (!sgfConfig.api_url || !sgfConfig.cloud_access) return;
 
@@ -279,6 +278,7 @@
         
         try {
             const response = await fetch(sgfConfig.api_url, {
+                method: "GET",
                 headers: { 
                     "Authorization": `Bearer ${realKey}`, 
                     "Accept": "application/vnd.github.v3+json",
@@ -288,9 +288,6 @@
             
             if (response.ok) {
                 const data = await response.json();
-                currentSha = data.sha;
-                
-                // CRÍTICO: GitHub devuelve Base64 con saltos de línea (\n). Hay que quitarlos o atob falla.
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
                 const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
                 
@@ -302,34 +299,31 @@
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
             
             } else if (response.status === 404) {
-                // El archivo aún no existe en GitHub. Está bien, el Master lo creará en el próximo Push.
                 statusInd.className = 'status-warning';
                 statusInd.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Archivo Nuevo (Listo para Push)';
-                currentSha = null;
             } else {
-                throw new Error(`Error HTTP: ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
-            console.error("Fallo de lectura en segundo plano", error);
+            console.error("Fallo de lectura", error);
             statusInd.className = 'status-offline';
-            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync (${error.message})`;
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
         }
     }
 
-    // Intervalo de Polling Master: Revisa cada 15 segundos si hay órdenes nuevas.
     setInterval(syncDataFromRemote, 15000);
 
-    // ESCRITURA FORZADA (Usada al aprobar licencias o crear usuarios)
+    // 2. ESCRITURA FORZADA Y CONTROLADA (GET para SHA -> PUT para Escribir)
     async function syncDataToRemote(silent = false) {
         if (!sgfConfig.api_url || !sgfConfig.cloud_access) {
             if(!silent) showToast("Canal no configurado. Vaya a Configuración de Canal.", "warning");
             return;
         }
 
-        if(!silent) showToast("Empujando cambios a GitHub...", "info");
+        if(!silent) showToast("Procesando actualización en GitHub...", "info");
         const realKey = sgfConfig.cloud_access.split('').reverse().join('');
         
-        // Garantizar Master Node
+        // Garantizar ROOT
         if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
              sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
@@ -340,28 +334,41 @@
             ordenes: sgfConfig.ordenes
         };
 
+        // Codificación segura Base64 para caracteres latinos
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
         try {
-            // Re-Verificación de SHA (Para evitar conflictos si alguien escribió hace 1 segundo)
-            let actualSha = currentSha;
-            try {
-                const getReq = await fetch(sgfConfig.api_url, { 
-                    headers: { "Authorization": `Bearer ${realKey}`, "Accept": "application/vnd.github.v3+json" } 
-                });
-                if(getReq.ok) { 
-                    const fd = await getReq.json(); actualSha = fd.sha; 
-                } else if (getReq.status === 404) {
-                    actualSha = null; // No hay SHA porque vamos a crear el archivo
+            // PASO 1: Hacemos GET para obtener el SHA obligatoriamente antes del PUT
+            let currentSha = null;
+            const getReq = await fetch(sgfConfig.api_url, {
+                method: "GET",
+                headers: { 
+                    "Authorization": `Bearer ${realKey}`, 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Cache-Control": "no-cache"
                 }
-            } catch(e) {}
+            });
 
+            if (getReq.ok) {
+                const getRes = await getReq.json();
+                currentSha = getRes.sha;
+            } else if (getReq.status !== 404) {
+                // Si no es 200 ni 404, hay un error de conexión/token
+                throw new Error(`GET falló con HTTP ${getReq.status}`);
+            }
+
+            // PASO 2: Construimos el cuerpo del PUT
             const bodyData = {
-                message: "SGF Master: Update Central State",
+                message: "SGF Master: Actualizando Base de Datos",
                 content: payloadBase64
             };
-            if (actualSha) bodyData.sha = actualSha;
+            
+            // Si obtuvimos un SHA válido, es obligatorio enviarlo para no recibir el error 405/409
+            if (currentSha) {
+                bodyData.sha = currentSha;
+            }
 
+            // PASO 3: Disparamos el PUT definitivo
             const putReq = await fetch(sgfConfig.api_url, {
                 method: "PUT",
                 headers: { 
@@ -372,18 +379,20 @@
                 body: JSON.stringify(bodyData)
             });
 
-            if(!putReq.ok) throw new Error(`HTTP ${putReq.status}`);
+            if(!putReq.ok) {
+                const errorData = await putReq.json();
+                throw new Error(`HTTP ${putReq.status} - ${errorData.message}`);
+            }
             
-            const putRes = await putReq.json();
-            currentSha = putRes.content.sha; // Actualizar SHA tras escribir
-            
-            if(!silent) showToast("Base de datos central actualizada y sincronizada.", "success");
+            if(!silent) showToast("Base de datos central sincronizada con éxito.", "success");
             document.getElementById('sync-status').className = 'status-online';
             document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
 
         } catch (error) {
-            console.error("Error al escribir:", error);
+            console.error("Error crítico de Escritura:", error);
             if(!silent) showToast(`Fallo al escribir en la nube: ${error.message}`, "error");
+            document.getElementById('sync-status').className = 'status-offline';
+            document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
         }
     }
 
@@ -438,7 +447,6 @@
         sgfConfig.usuarios.forEach((u) => {
             if(u.u === 'admin') return;
             const estadoTkn = calcularEstado(u.t);
-            // Si Aura subió el pago, el Portal se marca "AUDITANDO". El Master lo detecta aquí.
             let portalStatus = (u.estado === "AUDITANDO" || u.estado === "PENDIENTE") ? 
                 `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
                 `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
@@ -498,7 +506,6 @@
         }
     }
 
-    // APROBACIÓN DE ORDEN: Desbloquea el Portal (Pasa de AUDITANDO a LIBRE)
     function abrirAprobacion(orderId, userId) {
         document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
         document.getElementById('token_order_id').value = orderId;
@@ -520,7 +527,6 @@
         let d = new Date(); d.setDate(d.getDate() + dias);
         let fechaB64 = btoa(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`); 
         
-        // El Master sobreescribe el token y libera el Portal forzosamente
         sgfConfig.usuarios[usrIdx].t = `E-${Math.random().toString(36).substring(2,6).toUpperCase()}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
         sgfConfig.usuarios[usrIdx].estado = "LIBRE";
 
@@ -530,7 +536,7 @@
         }
         
         saveDB(); closeModal('modalToken');
-        syncDataToRemote(); // Empuja a GitHub. Aura, al hacer polling, verá que está LIBRE y desbloqueará la UI.
+        syncDataToRemote(); // Sincronizamos con GitHub tras la aprobación
     }
 
     // Inicializar
