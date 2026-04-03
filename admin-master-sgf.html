@@ -168,7 +168,7 @@
     </div>
 </div>
 
-<!-- Modal Generador de Licencia (Sin campo Semilla) -->
+<!-- Modal Generador de Licencia -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
         <h3>Aprobar y Generar Licencia</h3>
@@ -190,7 +190,7 @@
     </div>
 </div>
 
-<!-- Modal Configuración de Llave (Solo Revert) -->
+<!-- Modal Configuración de Llave -->
 <div id="modalConfig" class="modal">
     <div class="modal-content">
         <h3>Configurar Llave (GitHub)</h3>
@@ -254,7 +254,7 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       SISTEMA DE SINCRONIZACIÓN PROFESIONAL (SOLUCIÓN ERROR 422)
+       SISTEMA DE SINCRONIZACIÓN PROFESIONAL (CORS & FETCH FIXED)
        ===================================================================== */
 
     async function cargarDatosNube() {
@@ -267,15 +267,17 @@
         try {
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
+                mode: "cors",
+                cache: "no-store", // Evita cache local sin forzar CORS preflight reject
                 headers: { 
-                    "Authorization": "token " + realKey, 
-                    "Cache-Control": "no-cache" 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Authorization": `token ${realKey}`
                 }
             });
 
             if (response.ok) {
                 const data = await response.json();
-                currentSha = data.sha; // Guardamos el sello actual [cite: 106]
+                currentSha = data.sha; 
                 
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
                 const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
@@ -286,10 +288,13 @@
                 saveDB();
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
+            } else {
+                throw new Error("Respuesta no OK de GitHub");
             }
         } catch (error) {
             statusInd.className = 'status-offline';
-            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Lectura`;
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Red (Fetch)`;
+            console.error("Carga Nube Error:", error);
         }
     }
 
@@ -308,16 +313,21 @@
         const realKey = semillaRevertida.split('').reverse().join('');
 
         try {
-            // PASO 1: RESCATE DE SHA (Evita el Error 422) [cite: 116, 126]
+            // PASO 1: RESCATE DE SHA CON HEADERS LIMPIOS
             const getRes = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+                mode: "cors",
+                cache: "no-store",
+                headers: { 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Authorization": `token ${realKey}`
+                }
             });
-            if (!getRes.ok) throw new Error("No se pudo obtener el SHA de la nube.");
+            if (!getRes.ok) throw new Error("No se pudo obtener el SHA (Revise Token).");
             const dataGet = await getRes.json();
             const freshSha = dataGet.sha;
 
-            // PASO 2: PREPARAR EL PAQUETE [cite: 115, 116]
+            // PASO 2: PREPARAR EL PAQUETE
             const payloadToUpload = {
                 cloud_access: semillaRevertida,
                 usuarios: sgfConfig.usuarios,
@@ -325,23 +335,25 @@
             };
             const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
-            // PASO 3: ESCRITURA FINAL
+            // PASO 3: ESCRITURA FINAL CON CORS ENABLED
             const putRes = await fetch(GITHUB_API_URL, {
                 method: "PUT",
+                mode: "cors",
                 headers: { 
-                    "Authorization": "token " + realKey,
+                    "Accept": "application/vnd.github.v3+json",
+                    "Authorization": `token ${realKey}`,
                     "Content-Type": "application/json" 
                 },
                 body: JSON.stringify({
                     message: "SGF Master: Sincronización de Licencias de Mapa",
                     content: contentBase64,
-                    sha: freshSha // Sello de seguridad [cite: 120]
+                    sha: freshSha
                 })
             });
 
             if (putRes.ok) {
                 const putData = await putRes.json();
-                currentSha = putData.content.sha; // Actualizamos para la próxima vuelta [cite: 123]
+                currentSha = putData.content.sha; 
                 showToast("Nube Actualizada Correctamente", "success");
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Éxito';
                 btn.style.backgroundColor = '#00c853';
@@ -350,9 +362,10 @@
                 throw new Error(err.message);
             }
         } catch (error) {
-            showToast("Fallo: " + error.message, "error");
-            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error 422';
+            showToast("Fetch Error: " + error.message, "error");
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error de Red';
             btn.style.backgroundColor = '#d32f2f';
+            console.error("Sync Error:", error);
         }
 
         setTimeout(() => {
@@ -372,13 +385,9 @@
         let day = String(d.getDate()).padStart(2, '0');
         let fechaSTR = `${year}${month}${day}`;
 
-        // ID de 4 letras relleno con X si es muy corto
         let idPart = userId.substring(0, 4).toUpperCase().padEnd(4, 'X');
-        
-        // Encriptación simple mezclando nombre y fecha (Base64 Corto)
         let hexPart = btoa(`${userId}-${fechaSTR}`).replace(/=/g, '').toUpperCase().substring(0, 8);
 
-        // Formato Profesional: SGF-XXXX-2026-YYYY
         return `SGF-${idPart}-${year}-${hexPart}`;
     }
 
@@ -491,7 +500,6 @@
             return showToast("Este usuario ya existe.", "warning");
         }
 
-        // Generamos fecha de vencimiento a 1 año por defecto en creación
         let d = new Date(); d.setDate(d.getDate() + 365);
         let venc = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
@@ -502,7 +510,7 @@
             vencimiento: venc,
             u: u, 
             p: p || 'admin', 
-            t: generarLicencia(u, 365) // Uso de nueva Licencia
+            t: generarLicencia(u, 365) 
         });
 
         saveDB(); 
@@ -519,12 +527,11 @@
             const idx = sgfConfig.usuarios.findIndex(u => u.u === userName || u.user === userName);
             if(idx !== -1) {
                 let d = new Date();
-                d.setDate(d.getDate() + 7); // Prueba de 7 días
+                d.setDate(d.getDate() + 7);
                 let year = d.getFullYear();
                 let month = String(d.getMonth()+1).padStart(2,'0');
                 let day = String(d.getDate()).padStart(2,'0');
 
-                // Sobreescritura total para regresar a admin / admin (Regla 3)
                 sgfConfig.usuarios[idx].user = 'admin';
                 sgfConfig.usuarios[idx].u = 'admin';
                 sgfConfig.usuarios[idx].p = 'admin';
@@ -534,7 +541,7 @@
 
                 saveDB();
                 showToast(`Terminal ${userName} reseteado a fábrica.`, 'success');
-                sincronizarConNube(); // Subimos a GitHub
+                sincronizarConNube();
             }
         }
     }
@@ -577,7 +584,7 @@
         
         sgfConfig.usuarios[usrIdx].estado = "LIBRE";
         sgfConfig.usuarios[usrIdx].vencimiento = `${year}-${month}-${day}`;
-        sgfConfig.usuarios[usrIdx].t = generarLicencia(userId, dias); // Nueva Licencia
+        sgfConfig.usuarios[usrIdx].t = generarLicencia(userId, dias); 
 
         if (orderId !== "MANUAL") {
             const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
