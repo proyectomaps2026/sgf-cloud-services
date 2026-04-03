@@ -1,16 +1,23 @@
 {
-  "config": {
-    "fecha_actualizacion": "2026-04-03",
-    "version": "1.0"
-  },
-  "usuarios": [
-    {
-      "user": "admin",
-      "pass": "admin",
-      "id": "001",
-      "vencimiento": "2027-01-01",
-      "licencia": "SGF-MASTER-INIT",
-      "estado": "ACTIVO"
-    }
-  ]
+    "cloud_access": "2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg",
+    "usuarios": [
+        {
+            "user": "admin",
+            "pass": "admin",
+            "id": "001",
+            "vencimiento": "2027-01-01",
+            "licencia": "SGF-MASTER-INIT",
+            "estado": "ACTIVO"
+        },
+        {
+            "user": "alcaldia",
+            "id": "ID-ALCALDIA-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2027-04-03",
+            "u": "alcaldia",
+            "p": "admin",
+            "t": "SGF-ALCA-2027-YWXJYWXK"
+        }
+    ],
+    "ordenes": []
 }
