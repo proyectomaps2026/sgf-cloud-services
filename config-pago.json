@@ -18,6 +18,15 @@
             "u": "aura",
             "p": "aura",
             "t": "SGF-AURA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNS0wMw"
+        },
+        {
+            "user": "engelbert",
+            "id": "ID-ENGELBERT-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-03",
+            "u": "engelbert",
+            "p": "engelbert",
+            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
     "ordenes": []
