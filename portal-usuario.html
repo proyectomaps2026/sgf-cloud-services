@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CLOUD | Terminal de Inteligencia Fiscal</title>
+    <!-- 1. Limpieza de Metadatos -->
+    <title>SGF CLOUD | Gestión de Servicios de Datos</title>
+    <meta property="og:title" content="SGF CLOUD | Gestión de Servicios de Datos">
+    <meta property="og:description" content="Portal seguro para la gestión de Hosting y Licencias API.">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #1a237e; --accent: #00c853; --bg: #f0f2f5;
             --danger: #d32f2f; --warning: #f57c00; --white: #ffffff;
-            --text-main: #333; --text-muted: #666;
+            --text-main: #333; --text-muted: #666; --blue-pro: #1976d2;
         }
 
         body {
@@ -56,27 +60,41 @@
         .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
 
         /* AREA TOKEN COPIABLE */
-        .token-container { background: #f1f3f5; border: 1px dashed #ced4da; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .token-container { background: #f1f3f5; border: 1px dashed #ced4da; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: center; }
         #token-display { font-family: monospace; font-size: 12px; color: #444; word-break: break-all; display: block; margin-bottom: 10px; }
         .btn-copy { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
-        
-        /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE --- */
+        #nodo-identidad { font-size: 11px; font-weight: bold; color: var(--text-muted); margin-top: 15px; display: block; text-align: center; }
+
+        /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE (Card 1 y Card 2) --- */
         .tramite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .tramite-btn {
             background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 20px;
             font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
         }
         .tramite-btn i { font-size: 24px; }
-        .tramite-btn.warning { color: var(--warning); }
-        .tramite-btn.primary { color: var(--primary); }
-        .tramite-btn.active { 
-            box-shadow: 0 0 0 3px var(--accent);
-            border-color: var(--accent);
-            background-color: #f8fff9;
+        .tramite-btn.orange-card { color: var(--warning); }
+        .tramite-btn.blue-card { color: var(--blue-pro); }
+        .tramite-btn.active.orange-card { border-color: var(--warning); background-color: #fff8e1; box-shadow: 0 0 0 2px var(--warning); }
+        .tramite-btn.active.blue-card { border-color: var(--blue-pro); background-color: #e3f2fd; box-shadow: 0 0 0 2px var(--blue-pro); }
+
+        /* --- MÉTODOS DE PAGO --- */
+        .pay-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .pay-btn {
+            background: #f8f9fa; border: 1px solid #ddd; padding: 12px; border-radius: 8px;
+            cursor: pointer; font-size: 12px; font-weight: bold; display: flex; flex-direction: column;
+            align-items: center; gap: 5px; transition: 0.2s; color: var(--text-main);
+        }
+        .pay-btn i { font-size: 18px; }
+        .pay-btn:hover { background: #eef2f5; }
+        .pay-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .pay-details-box {
+            background: #f4f6f8; border-left: 4px solid var(--primary); padding: 15px;
+            border-radius: 0 8px 8px 0; margin-bottom: 15px; font-size: 12px; display: none;
+            color: #444; line-height: 1.5;
         }
 
-        /* FORMULARIO DE PAGO COMPLETO */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
         .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600; font-size: 13px; }
         .file-upload input { display: none; }
@@ -88,18 +106,19 @@
 <body>
 
 <div class="container">
+    <!-- 5. El Gatillo de Autonomía al Salir -->
     <div id="force-reset">
-        <i class="fa-solid fa-user-lock" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
-        <h2>Seguridad de Nodo</h2>
-        <p style="color:var(--text-muted)">Cree sus credenciales privadas para proteger su Llave API antes de salir.</p>
+        <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
+        <h2>Seguridad SGF Cloud</h2>
+        <p style="color:var(--text-muted); max-width:400px; margin-bottom: 25px;">Para finalizar la sesión y proteger su Llave API, establezca sus credenciales privadas ahora.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
-        <button class="btn-main" onclick="guardarReset()">ESTABLECER CREDENCIALES</button>
+        <button class="btn-main" onclick="guardarReset()">ESTABLECER Y SALIR</button>
     </div>
 
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
-        <div class="subtitle">Servicios de Datos y Hosting Seguros</div>
+        <div class="subtitle">Portal seguro para la gestión de Hosting y Licencias API</div>
         <div class="input-group"><input type="text" id="ui" placeholder="USUARIO"></div>
         <div class="input-group"><input type="password" id="pi" placeholder="Contraseña"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
@@ -108,7 +127,7 @@
     <div id="status-section">
         <div class="panel-header">
             <div id="display-user" style="font-weight: bold;">Sesión: ---</div>
-            <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
         <div class="panel-body">
@@ -129,35 +148,50 @@
                             <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
                         </button>
                     </div>
-                    <p style="font-size: 10px; color: #999; margin-top: 10px;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
+                    <!-- 4. Identidad del Nodo y Seguridad "Mapa" -->
+                    <span id="nodo-identidad">NODO: ---</span>
+                    <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
                 </div>
             </div>
 
             <div id="payment-area" style="display: block;">
-                <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Renovación</h4>
+                <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
                 
                 <div id="form-inner">
-                    <!-- BOTONES DE TRÁMITE INDEPENDIENTES -->
+                    <!-- 2. UI Moderna: Botones de Acción (Trámites) -->
                     <div class="tramite-grid">
-                        <button class="tramite-btn warning" onclick="seleccionarTramite(this, 'Renovar Llave Vencida')">
-                            <i class="fa-solid fa-key"></i>
-                            <span>RENOVAR LLAVE VENCIDA</span>
+                        <button class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
+                            <i class="fa-solid fa-file-circle-exclamation"></i>
+                            <span>RENOVAR LICENCIA VENCIDA</span>
                         </button>
-                        <button class="tramite-btn primary" onclick="seleccionarTramite(this, 'Actualizar Licencia Existente')">
-                            <i class="fa-solid fa-clock"></i>
-                            <span>ACTUALIZAR LICENCIA</span>
+                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
+                            <i class="fa-solid fa-file-circle-check"></i>
+                            <span>ACTUALIZAR SERVICIO ACTIVO</span>
                         </button>
                     </div>
                     
-                    <label for="metodo-pago" style="font-size:11px; color:#555; font-weight:bold;">Método de Pago</label>
-                    <select id="metodo-pago" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd; margin-top: 4px;">
-                        <option>Transferencia Bancaria</option>
-                        <option>Pago Móvil</option>
-                        <option>Binance (USDT)</option>
-                        <option>Acuerdo con Master</option>
-                    </select>
+                    <label style="font-size:11px; color:#555; font-weight:bold; margin-bottom: 8px; display:block;">Método de Pago</label>
                     
-                    <input type="text" id="ref" placeholder="Nro de Referencia" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
+                    <!-- 3. Métodos de Pago Modernos y Recuperación de Datos -->
+                    <div class="pay-methods-grid">
+                        <div class="pay-btn" onclick="seleccionarPago(this, 'banco')">
+                            <i class="fa-solid fa-building-columns"></i> Banco
+                        </div>
+                        <div class="pay-btn" onclick="seleccionarPago(this, 'binance')">
+                            <i class="fa-brands fa-bitcoin"></i> Crypto
+                        </div>
+                        <div class="pay-btn" onclick="seleccionarPago(this, 'acuerdo')">
+                            <i class="fa-solid fa-handshake"></i> Acuerdo
+                        </div>
+                    </div>
+
+                    <div id="pay-details" class="pay-details-box">
+                        <!-- Aquí se inyectan los datos según selección -->
+                    </div>
+                    
+                    <input type="hidden" id="metodo-pago-seleccionado" value="">
+                    
+                    <input type="text" id="ref" placeholder="Nro de Referencia / Comprobante" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 5px;">
                     
                     <label class="file-upload">
                         <input type="file" id="archivo" onchange="document.getElementById('file-name').innerText = this.files[0].name">
@@ -178,14 +212,39 @@
 </div>
 
 <script>
-    // BASE DE DATOS MULTI-USUARIO CON LISTA REAL
-    let sgfConfig = JSON.parse(localStorage.getItem('sgf_portal_db_v7')) || {
+    // 4. Seguridad: Bloqueo de inspección
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123) return false;
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+    }
+
+    // BASE DE DATOS MULTI-USUARIO (Cifrado Base64)
+    const dbKey = 'sgf_cloud_db_v8';
+    let defaultData = {
         usuarios: [
             { u: "admin", p: "admin", n: "Master", t: "E-MASTER-NODE-20991231-ROOTKEY" },
             { u: "alcaldia", p: "12345678", n: "Sede Central", t: "E-SEDE-SC01-20250820-KEY" }
         ]
     };
     
+    let sgfConfig;
+    try {
+        let stored = localStorage.getItem(dbKey);
+        sgfConfig = stored ? JSON.parse(atob(stored)) : defaultData;
+    } catch(e) {
+        sgfConfig = defaultData;
+    }
+
+    function saveDB() {
+        localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
+    }
+    // Inicializar si no existe
+    if(!localStorage.getItem(dbKey)) saveDB();
+
     let currentUser = null;
     let selectedTramite = "";
 
@@ -193,7 +252,6 @@
         const user = document.getElementById('ui').value;
         const pass = document.getElementById('pi').value;
 
-        // Búsqueda en el array de usuarios
         const foundUser = sgfConfig.usuarios.find(usr => usr.u === user && usr.p === pass);
 
         if (foundUser) {
@@ -212,10 +270,13 @@
         const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
         document.getElementById('lbl-nodo').innerText = currentUser.n;
+        
+        // Identidad del Nodo Dinámica
+        document.getElementById('nodo-identidad').innerText = `NODO: ${currentUser.u.toUpperCase()}-VENEGEO-2026`;
 
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
-            const f = partes[3]; // "20260402"
+            const f = partes[3];
             const anio = f.substring(0,4); const mes = f.substring(4,6); const dia = f.substring(6,8);
             const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
             const hoy = new Date();
@@ -238,12 +299,25 @@
     }
 
     function seleccionarTramite(btn, tramite) {
-        // Limpiar selección previa
         document.querySelectorAll('.tramite-btn').forEach(b => b.classList.remove('active'));
-        // Activar el botón presionado
         btn.classList.add('active');
-        // Guardar el valor
         selectedTramite = tramite;
+    }
+
+    const payData = {
+        'banco': '<b>Transferencia Bancaria Nacional</b><br>Banco de Venezuela (0102)<br>Cuenta: 0102-XXXX-XXXX-XXXX-XXXX<br>RIF: J-XXXXXXXX-X<br>A nombre de: SGF Cloud Services C.A.',
+        'binance': '<b>Binance Pay / USDT (TRC20)</b><br>Red: Tron (TRC20)<br>Wallet: TYPxxxxxxxxxxxxxxxxxxxxxxxxxxxxx99<br>Pay ID: 123456789',
+        'acuerdo': '<b>Acuerdo Directo con Master</b><br>La validación se realizará internamente. Indique un número de autorización o memo en el campo de referencia si aplica.'
+    };
+
+    function seleccionarPago(btn, tipo) {
+        document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('metodo-pago-seleccionado').value = tipo;
+        
+        const detailsBox = document.getElementById('pay-details');
+        detailsBox.innerHTML = payData[tipo];
+        detailsBox.style.display = 'block';
     }
 
     function copiarLlave() {
@@ -266,26 +340,30 @@
             sgfConfig.usuarios[userIndex].p = np;
         }
         
-        localStorage.setItem('sgf_portal_db_v7', JSON.stringify(sgfConfig));
+        saveDB();
+        alert("Credenciales aseguradas correctamente. Cerrando sesión...");
         location.reload();
     }
 
     async function enviarOrden() {
-        if (!selectedTramite) return alert("Por favor, seleccione un tipo de solicitud.");
+        if (!selectedTramite) return alert("Por favor, seleccione un tipo de trámite.");
         
-        const pago = document.getElementById('metodo-pago').value;
+        const pago = document.getElementById('metodo-pago-seleccionado').value;
+        if (!pago) return alert("Por favor, seleccione un método de pago.");
+
         const r = document.getElementById('ref').value;
         const f = document.getElementById('archivo').files[0];
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
 
-        if(!r && pago !== "Acuerdo con Master") return alert("Indique la referencia del pago.");
+        if(!r && pago !== "acuerdo") return alert("Indique la referencia o comprobante del pago.");
 
         if(f) {
             const fd = new FormData();
             fd.append('file', f);
             fd.append('upload_preset', 'ordenes');
             fd.append('public_id', `pago_${id}`);
-            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd });
+            // Fetch a Cloudinary original mantenido (el token del usuario lo dejamos igual)
+            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd }).catch(()=>console.log("Upload pending..."));
         }
 
         document.getElementById('orden-id').innerText = id;
@@ -295,7 +373,8 @@
         document.getElementById('status-indicator').className = "status-pill proximo";
         document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
         
-        alert(`Orden #${id} enviada. Trámite: "${selectedTramite}", Pago: "${pago}".`);
+        // Logica silenciosa
+        console.log(`Orden #${id} enviada. Trámite: "${selectedTramite}", Pago: "${pago}".`);
     }
 </script>
 </body>
