@@ -99,6 +99,7 @@
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
     
     <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configurar Llave (GitHub)</div>
+    <!-- Botón Lanzallamas -->
     <div class="nav-item sync-btn" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
 </div>
 
@@ -226,19 +227,21 @@
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA LOCAL
        ===================================================================== */
-    // URL Fija (Estilo Mapa)
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
-    
-    const dbKey = 'sgf_master_db_v20'; 
+    const dbKey = 'sgf_master_db_v21'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
 
     function loadDB() {
         try {
             let stored = localStorage.getItem(dbKey);
             if(stored) sgfConfig = JSON.parse(atob(stored));
-            if(!sgfConfig.usuarios) sgfConfig.usuarios = [];
-            if(!sgfConfig.ordenes) sgfConfig.ordenes = [];
-        } catch(e) { console.error("Error DB Local"); }
+            // Garantizar que siempre sean arrays (evita que la tabla colapse)
+            if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+            if(!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
+        } catch(e) { 
+            console.error("Error DB Local", e);
+            sgfConfig = { usuarios: [], ordenes: [] };
+        }
     }
 
     function saveDB() {
@@ -259,7 +262,7 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       MOTOR DE SINCRONIZACIÓN DIRECTO (ESTILO MAPA + REVERT KEY)
+       MOTOR DE SINCRONIZACIÓN (LANZALLAMAS ABSOLUTO)
        ===================================================================== */
 
     // 1. POLLING DE LECTURA
@@ -273,7 +276,7 @@
         try {
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { "Authorization": "token " + realKey }
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
             });
             
             if (response.ok) {
@@ -281,8 +284,8 @@
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
                 const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
                 
-                sgfConfig.usuarios = cloudState.usuarios || [];
-                sgfConfig.ordenes = cloudState.ordenes || [];
+                sgfConfig.usuarios = Array.isArray(cloudState.usuarios) ? cloudState.usuarios : [];
+                sgfConfig.ordenes = Array.isArray(cloudState.ordenes) ? cloudState.ordenes : [];
                 saveDB();
                 
                 statusInd.className = 'status-online';
@@ -296,7 +299,7 @@
 
     setInterval(syncDataFromRemote, 15000);
 
-    // 2. ESCRITURA DIRECTA
+    // 2. ESCRITURA FORZADA (Lanzallamas - No pregunta, solo dispara)
     async function syncDataToRemote(silent = false) {
         const semillaRevertida = localStorage.getItem('semilla_revert');
         
@@ -305,54 +308,52 @@
             return;
         }
 
-        if(!silent) showToast("Actualizando nube...", "info");
+        if(!silent) showToast("Empujando datos a la fuerza...", "info");
         
-        // Volteamos la semilla para usar el token original
         const realKey = semillaRevertida.split('').reverse().join('');
         
-        // Asegurar que ROOT existe siempre
+        // Blindaje del JSON
+        if (!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+        if (!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
+
+        // Asegurar Admin Root
         if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
              sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
 
-        // Construir JSON (El Espejo: Incluimos la llave revertida para el Portal)
+        // Empaquetado Exacto
         const payloadToUpload = {
             cloud_access: semillaRevertida,
             usuarios: sgfConfig.usuarios,
             ordenes: sgfConfig.ordenes
         };
 
-        // Codificación Requerida por GitHub (Base64 Estándar)
         const jsonString = JSON.stringify(payloadToUpload, null, 4);
         const payloadBase64 = btoa(unescape(encodeURIComponent(jsonString)));
 
         let fileSha = null;
 
-        // Intentar obtener el SHA silenciosamente (Evita error de versionado)
+        // Intentar obtener el SHA (Si falla, continuamos igual)
         try {
             const getReq = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { "Authorization": "token " + realKey }
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
             });
             if (getReq.ok) {
                 const getRes = await getReq.json();
                 fileSha = getRes.sha;
             }
-        } catch(e) { 
-            // Silencioso. Si no agarra el SHA, procederá al PUT directo como archivo nuevo.
-        }
+        } catch(e) { console.warn("No se obtuvo SHA, forzando creación..."); }
 
-        // Preparar PUT
+        // Cuerpo del PUT
         const bodyData = {
-            message: "SGF Master: Guardado directo",
+            message: "SGF Master: Guardado Forzoso (Lanzallamas)",
             content: payloadBase64
         };
         
-        if (fileSha) {
-            bodyData.sha = fileSha; // Solo lo envía si existe
-        }
+        if (fileSha) bodyData.sha = fileSha;
 
-        // Disparo Final a GitHub
+        // El Disparo
         try {
             const putReq = await fetch(GITHUB_API_URL, {
                 method: "PUT",
@@ -364,19 +365,18 @@
             });
 
             if(!putReq.ok) {
-                // Diagnóstico Silencioso: Alerta de Caja Negra si falla
                 const errData = await putReq.json();
-                alert(`Error HTTP ${putReq.status}\nMensaje: ${errData.message}\nVerifique si su Token tiene permisos de Repositorio.`);
+                alert(`RECHAZO DE GITHUB\nCódigo: ${putReq.status}\nMensaje: ${errData.message}\nSi el error es 409 o 422, el repositorio bloqueó la sobreescritura.`);
                 throw new Error("Rechazado por GitHub");
             }
             
-            if(!silent) showToast("Sincronización exitosa.", "success");
+            if(!silent) showToast("Sincronización forzada exitosa.", "success");
             document.getElementById('sync-status').className = 'status-online';
             document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
 
         } catch (error) {
             if(!silent && error.message !== "Rechazado por GitHub") {
-                alert(`Error de Conexión o Cors: ${error.message}`);
+                alert(`Error de Red: ${error.message}`);
             }
             document.getElementById('sync-status').className = 'status-offline';
             document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
@@ -389,7 +389,6 @@
     function abrirConfigCanal() {
         const semillaActual = localStorage.getItem('semilla_revert');
         if(semillaActual) {
-            // Mostrar token normal para edición
             document.getElementById('cfg_token').value = semillaActual.split('').reverse().join('');
         } else {
             document.getElementById('cfg_token').value = '';
@@ -401,20 +400,23 @@
         const token = document.getElementById('cfg_token').value.trim();
         if(!token) return showToast("Ingrese el Token.", "error");
 
-        // Guarda la semilla invertida en LocalStorage
         const semillaRevertida = token.split('').reverse().join('');
         localStorage.setItem('semilla_revert', semillaRevertida);
         
         closeModal('modalConfig');
         showToast("Llave guardada. Inicializando...", "success");
-        syncDataToRemote(); 
+        syncDataFromRemote(); 
     }
 
     /* =====================================================================
-       LÓGICA DE INTERFAZ Y RENDERIZADO
+       LÓGICA DE INTERFAZ Y RENDERIZADO BLINDADO
        ===================================================================== */
     function decodificarFecha(token) {
-        try { const partes = token.split('-'); if (partes.length >= 4) return atob(partes[3]); } catch(e) {}
+        if (!token) return null;
+        try { 
+            const partes = token.split('-'); 
+            if (partes.length >= 4) return atob(partes[3]); 
+        } catch(e) {}
         return null;
     }
 
@@ -430,57 +432,104 @@
         return { class: 'status-expired', txt: 'VENCIDO' };
     }
 
+    // Render de Tabla Reparado (A prueba de fallos internos)
     function renderNodos() {
         const list = document.getElementById('listaNodos');
         list.innerHTML = "";
-        let pendingAudits = sgfConfig.ordenes.filter(o => o.estado === 'Pendiente').length;
+        
+        const arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        const arrUsuarios = Array.isArray(sgfConfig.usuarios) ? sgfConfig.usuarios : [];
 
-        sgfConfig.usuarios.forEach((u) => {
-            if(u.u === 'admin') return;
-            const estadoTkn = calcularEstado(u.t);
-            let portalStatus = (u.estado === "AUDITANDO" || u.estado === "PENDIENTE") ? 
-                `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
-                `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
-            
-            list.innerHTML += `
-                <tr>
-                    <td><b style="color:white; font-size:14px;">${u.u.toUpperCase()}</b></td>
-                    <td><code style="color:var(--primary); font-size:12px;">ID-${u.u.toUpperCase()}-2026</code></td>
-                    <td>${portalStatus}</td>
-                    <td style="color:#aaa;">${decodificarFecha(u.t) ? `${decodificarFecha(u.t).substring(6,8)}/${decodificarFecha(u.t).substring(4,6)}/${decodificarFecha(u.t).substring(0,4)}` : '---'}</td>
-                    <td style="text-align: right;">
-                        <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
-                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                </tr>
-            `;
+        let pendingAudits = arrOrdenes.filter(o => o.estado === 'Pendiente').length;
+
+        arrUsuarios.forEach((u) => {
+            try {
+                // Protección si el objeto viene mal formado o es el admin
+                if(!u || !u.u || u.u === 'admin') return;
+
+                const userName = u.u.toUpperCase();
+                const userTkn = u.t || '---';
+                const estadoTkn = calcularEstado(userTkn);
+                
+                let portalStatus = (u.estado === "AUDITANDO" || u.estado === "PENDIENTE") ? 
+                    `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
+                    `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
+                
+                let fDecodificada = decodificarFecha(userTkn);
+                let fechaMostrada = (fDecodificada && fDecodificada.length === 8) 
+                    ? `${fDecodificada.substring(6,8)}/${fDecodificada.substring(4,6)}/${fDecodificada.substring(0,4)}` 
+                    : '---';
+
+                list.innerHTML += `
+                    <tr>
+                        <td><b style="color:white; font-size:14px;">${userName}</b></td>
+                        <td><code style="color:var(--primary); font-size:12px;">ID-${userName}-2026</code></td>
+                        <td>${portalStatus}</td>
+                        <td style="color:#aaa;">${fechaMostrada}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
+                            <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            } catch(e) {
+                console.error("Fila omitida por error de formato:", e);
+            }
         });
-        document.getElementById('statTotal').innerText = sgfConfig.usuarios.length > 0 ? sgfConfig.usuarios.length - 1 : 0;
+
+        document.getElementById('statTotal').innerText = arrUsuarios.length > 0 ? arrUsuarios.length - 1 : 0;
         document.getElementById('statPend').innerText = pendingAudits;
-        document.getElementById('statRecaudo').innerText = sgfConfig.ordenes.filter(o => o.estado === 'Aprobada').length;
+        document.getElementById('statRecaudo').innerText = arrOrdenes.filter(o => o.estado === 'Aprobada').length;
     }
 
     function renderHistorial() {
         const cuerpo = document.getElementById('cuerpoPagos');
         cuerpo.innerHTML = "";
-        const ordenesInversas = [...sgfConfig.ordenes].reverse();
+        
+        const arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        const ordenesInversas = [...arrOrdenes].reverse();
+        
         ordenesInversas.forEach(p => {
-            let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
-            let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
-            let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
-            
-            cuerpo.innerHTML += `<tr><td style="color:#888;">${p.fecha.split('T')[0]}</td><td><b style="color:white;">${p.usuario.toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo}</span><br><small>Ref: ${p.referencia}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+            try {
+                if(!p || !p.id) return;
+                
+                let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+                let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
+                let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
+                let fechaCorta = p.fecha ? p.fecha.split('T')[0] : '---';
+                
+                cuerpo.innerHTML += `<tr><td style="color:#888;">${fechaCorta}</td><td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo||'---'}</span><br><small>Ref: ${p.referencia||'---'}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+            } catch(e) {}
         });
     }
 
     /* =====================================================================
-       ACCIONES DE INTERFAZ
+       ACCIONES DE INTERFAZ (CON PUSH AUTOMÁTICO)
        ===================================================================== */
     function crearTerminal() {
-        const u = document.getElementById('n_user').value.toLowerCase();
-        if(!u) return showToast("Usuario requerido.", "error");
-        sgfConfig.usuarios.push({ u: u, p: document.getElementById('n_pass').value || 'admin', t: `E-INIT-${u.toUpperCase()}-${btoa("20200101")}-START`, estado: "LIBRE" });
-        saveDB(); closeModal('modalNuevo'); syncDataToRemote();
+        const u = document.getElementById('n_user').value.toLowerCase().trim();
+        const p = document.getElementById('n_pass').value.trim();
+
+        if(!u) return showToast("El ID de usuario es obligatorio.", "error");
+        if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("Este usuario ya existe.", "warning");
+
+        sgfConfig.usuarios.push({ 
+            u: u, 
+            p: p || 'admin', 
+            t: `E-INIT-${u.toUpperCase()}-${btoa("20200101")}-START`, 
+            estado: "LIBRE" 
+        });
+
+        saveDB(); 
+        
+        // Limpiar campos del modal
+        document.getElementById('n_user').value = '';
+        document.getElementById('n_pass').value = 'admin';
+        closeModal('modalNuevo'); 
+        
+        showToast("Guardado local. Sincronizando con GitHub...", "info");
+        syncDataToRemote(); // Push Automático
     }
 
     function eliminarTerminal(user) {
