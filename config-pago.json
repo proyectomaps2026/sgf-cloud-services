@@ -6,6 +6,12 @@
             "p": "admin",
             "n": "Sistema Central",
             "t": "E-ROOT-SYS-MjA5OTEyMzE=-MASTERKEY"
+        },
+        {
+            "u": "admin",
+            "p": "admin",
+            "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
+            "estado": "LIBRE"
         }
     ],
     "ordenes": []
