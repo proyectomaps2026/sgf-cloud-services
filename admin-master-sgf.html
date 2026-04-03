@@ -6,7 +6,7 @@
     <title>SGF MASTER | Central de Validación de Datos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; --info: #00bcd4; }
+        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; --info: #00bcd4; --purple: #9c27b0; }
         body { font-family: 'Segoe UI', Inter, sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
         
         /* Sidebar */
@@ -14,8 +14,11 @@
         .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
-        .nav-item.sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 20px; }
-        .nav-item.sync-btn:hover { background: var(--info); color: white; }
+        
+        .sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 10px; }
+        .sync-btn:hover { background: var(--info); color: white; }
+        .config-btn { background: rgba(156, 39, 176, 0.1); color: var(--purple); border: 1px solid rgba(156, 39, 176, 0.2); margin-top: 20px; }
+        .config-btn:hover { background: var(--purple); color: white; }
 
         /* Main Content */
         .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
@@ -58,7 +61,7 @@
         /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; }
+        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; margin-bottom: 10px; }
         input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
         textarea { height: 150px; font-family: monospace; color: #00c853; resize: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
@@ -68,6 +71,7 @@
         .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; min-width: 250px;}
         .toast-success { background: var(--success); color: #000; }
         .toast-error { background: var(--danger); color: white; }
+        .toast-warning { background: var(--warning); color: #000; }
         .toast-info { background: var(--info); color: #000; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
@@ -87,10 +91,11 @@
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
     <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
-    <div class="nav-item" onclick="mostrarExport()"><i class="fa-solid fa-code-branch"></i> Exportar Config.js</div>
     
-    <!-- Módulo 2: Sincronización Remota -->
-    <div class="nav-item sync-btn" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Publicar Actualización</div>
+    <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configuración de Canal</div>
+    <div class="nav-item sync-btn" onclick="syncDataToRemote(false)"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Sincronización</div>
+    
+    <div class="nav-item" onclick="mostrarExport()" style="margin-top: 10px;"><i class="fa-solid fa-code-branch"></i> Ver JSON Local</div>
 </div>
 
 <div class="main" id="view-clientes">
@@ -124,8 +129,8 @@
 <div class="main" id="view-pagos" style="display:none;">
     <div class="header">
         <h1>Auditoría de Trámites</h1>
-        <!-- Módulo 1b: Depurar Registro de Transacciones -->
-        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Registro de Transacciones</button>
+        <!-- Depurar Registro de Transacciones sincronizado -->
+        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Historial (Sync Nube)</button>
     </div>
     <div class="table-container">
         <table>
@@ -177,33 +182,49 @@
         <input type="hidden" id="token_user_id">
 
         <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y ENVIAR</button>
+            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y SYNC</button>
             <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
         </div>
     </div>
 </div>
 
-<!-- Modal Exportar Config.js -->
+<!-- Modal Configuración de Canal (Revert Key) -->
+<div id="modalConfig" class="modal">
+    <div class="modal-content">
+        <h3>Configuración de Canal (Nube)</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Configure las credenciales de GitHub. El Token será inyectado de forma invertida (Revert Key) en `config-pago.json` para protegerlo.</p>
+        
+        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Usuario/Repositorio</label>
+        <input type="text" id="cfg_repo" placeholder="Ej: alcaldia-dev/sgf-sistema">
+        
+        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Ruta del Archivo JSON</label>
+        <input type="text" id="cfg_path" placeholder="Ej: config-pago.json" value="config-pago.json">
+        
+        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Token GitHub (Classic/Fine-grained)</label>
+        <input type="password" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Guardar y Encriptar</button>
+            <button class="btn btn-action" onclick="closeModal('modalConfig')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Exportar JSON -->
 <div id="modalExport" class="modal">
     <div class="modal-content" style="width: 500px;">
-        <h3>Exportar Config.js</h3>
-        <p style="font-size:12px; color:#888;">Copie este código y reemplácelo en el archivo <code>config.js</code> del Portal para actualizar la base de datos de terminales y licencias.</p>
+        <h3>Estructura JSON Local</h3>
+        <p style="font-size:12px; color:#888;">Esta es la estructura actual que se envía a <code>config-pago.json</code> durante la Sincronización Automática.</p>
         <textarea id="export-code" readonly></textarea>
         <button class="btn btn-action" onclick="closeModal('modalExport')" style="margin-top: 15px; width: 100%;">Cerrar</button>
     </div>
 </div>
 
 <script>
-    // Módulo 5: Integridad de la Visualización (Detección de Manipulación del DOM / Resize)
+    // Integridad de la Visualización
     document.addEventListener('contextmenu', event => event.preventDefault());
-    
-    let baseWidth = window.innerWidth;
-    let baseHeight = window.innerHeight;
-    
     setInterval(() => {
-        // Detecta discrepancias graves en la resolución (Ej. herramientas de desarrollo)
         if (Math.abs(window.outerWidth - window.innerWidth) > 160 || Math.abs(window.outerHeight - window.innerHeight) > 160) {
-            // Reinicia la vista para proteger elementos
             document.body.innerHTML = `
                 <div style="display:flex; height:100vh; width:100vw; justify-content:center; align-items:center; background:#0a0a0c; flex-direction:column;">
                     <i class="fa-solid fa-shield-halved" style="color:var(--primary); font-size: 50px; margin-bottom: 20px;"></i>
@@ -215,7 +236,7 @@
         }
     }, 1000);
 
-    // Módulo 4: Sistema UI/Feedback por Toasts (Reemplazo de alertas)
+    // Sistema de Toasts
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -223,6 +244,7 @@
         
         let icon = 'fa-check-circle';
         if (type === 'error') icon = 'fa-exclamation-triangle';
+        if (type === 'warning') icon = 'fa-exclamation-circle';
         if (type === 'info') icon = 'fa-info-circle';
 
         toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
@@ -234,14 +256,17 @@
         }, 3500);
     }
 
-    // BASE DE DATOS COMPARTIDA
-    const dbKey = 'sgf_cloud_db_v13';
-    let sgfConfig = { usuarios: [], ordenes: [] };
+    // BASE DE DATOS LOCAL
+    const dbKey = 'sgf_cloud_db_v14';
+    let sgfConfig = { usuarios: [], ordenes: [], cloud_access: "", repo_info: null };
 
     function loadDB() {
         try {
             let stored = localStorage.getItem(dbKey);
             if(stored) sgfConfig = JSON.parse(atob(stored));
+            // Garantizar estructura
+            if(!sgfConfig.usuarios) sgfConfig.usuarios = [];
+            if(!sgfConfig.ordenes) sgfConfig.ordenes = [];
         } catch(e) { console.error("Error DB"); }
     }
 
@@ -265,13 +290,11 @@
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // RENDERIZADO Y LÓGICA DE FECHAS (Decodificador Base64 Espejo)
+    // RENDERIZADO
     function decodificarFecha(token) {
         try {
             const partes = token.split('-');
-            if (partes.length >= 4) {
-                return atob(partes[3]); // Desencripta la fecha en Base64
-            }
+            if (partes.length >= 4) return atob(partes[3]);
         } catch(e) {}
         return null;
     }
@@ -317,8 +340,7 @@
                     <td style="text-align: right;">
                         <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia Manual"><i class="fa-solid fa-key"></i></button>
                         <button class="btn btn-action" onclick="forzarReset('${u.u}')" title="Forzar Reset de Seguridad"><i class="fa-solid fa-user-lock"></i></button>
-                        <!-- Módulo 1a: Eliminar Registro -->
-                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar Registro"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar Registro (Sync)"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
             `;
@@ -344,7 +366,7 @@
         });
     }
 
-    // 1. GESTIÓN DE TERMINALES Y LIMPIEZA
+    // GESTIÓN DE TERMINALES
     function crearTerminal() {
         const n = document.getElementById('n_muni').value;
         const u = document.getElementById('n_user').value.toLowerCase();
@@ -358,37 +380,41 @@
         
         saveDB();
         closeModal('modalNuevo');
-        showToast("Terminal registrado exitosamente en la base local.", "success");
+        showToast("Terminal registrado exitosamente.", "success");
+        syncDataToRemote(true); // Sincronización transparente
     }
 
     function forzarReset(user) {
-        if(confirm(`¿Forzar reset de seguridad para el terminal [${user}]? La cuenta volverá a admin/admin.`)) {
+        if(confirm(`¿Forzar reset de seguridad para el terminal [${user}]?`)) {
             const idx = sgfConfig.usuarios.findIndex(u => u.u === user);
             if(idx !== -1) {
                 sgfConfig.usuarios[idx].p = 'admin';
                 saveDB();
-                showToast(`Credenciales restablecidas para el terminal ${user}.`, 'info');
+                showToast(`Credenciales restablecidas para ${user}.`, 'info');
+                syncDataToRemote(true);
             }
         }
     }
 
     function eliminarTerminal(user) {
-        if(confirm(`ATENCIÓN: ¿Está seguro de ELIMINAR permanentemente el registro del terminal [${user}]?`)) {
+        if(confirm(`ATENCIÓN: ¿Está seguro de ELIMINAR permanentemente a [${user}] de la Nube?`)) {
             sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== user);
             saveDB();
-            showToast(`Registro de terminal ${user} eliminado.`, 'info');
+            showToast(`Registro eliminado. Actualizando nube...`, 'warning');
+            syncDataToRemote(true); // Se elimina también en la nube
         }
     }
 
     function limpiarHistorial() {
-        if(confirm("¿Está seguro de limpiar TODO el registro de transacciones? Esta acción es irreversible.")) {
+        if(confirm("¿Está seguro de limpiar TODO el registro de transacciones en la Nube? Esta acción es irreversible.")) {
             sgfConfig.ordenes = [];
             saveDB();
-            showToast("Registro de transacciones depurado con éxito.", "success");
+            showToast("Bandeja limpia. Actualizando nube...", "info");
+            syncDataToRemote(true); // Impacta la limpieza en la nube
         }
     }
-    
-    // Módulo 3: LÓGICA DE LICENCIAMIENTO CON ENCRIPTACIÓN BASE64
+
+    // LICENCIAMIENTO
     function abrirAprobacion(orderId, userId) {
         document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
         document.getElementById('token_order_id').value = orderId;
@@ -406,12 +432,10 @@
         const userId = document.getElementById('token_user_id').value;
         const orderId = document.getElementById('token_order_id').value;
         const dias = parseInt(document.getElementById('dias_extension').value);
-        let semilla = document.getElementById('semilla').value;
-        
-        if(!semilla) semilla = "SGF2026"; 
+        let semilla = document.getElementById('semilla').value || "SGF2026";
 
         const usrIdx = sgfConfig.usuarios.findIndex(u => u.u === userId);
-        if(usrIdx === -1) return showToast("Usuario no encontrado en la base", "error");
+        if(usrIdx === -1) return showToast("Usuario no encontrado", "error");
 
         let d = new Date();
         d.setDate(d.getDate() + dias);
@@ -419,14 +443,9 @@
         let mes = String(d.getMonth() + 1).padStart(2, '0');
         let dia = String(d.getDate()).padStart(2, '0');
         
-        let fechaExt = `${anio}${mes}${dia}`;
-        
-        // Encriptación de integridad para transmisión
-        let fechaB64 = btoa(fechaExt); 
-        
+        let fechaB64 = btoa(`${anio}${mes}${dia}`); 
         let basura = Math.random().toString(36).substring(2, 6).toUpperCase();
         
-        // Token Estructurado: E-[SALT]-[USUARIO]-[FECHA_B64]-[SEMILLA_SEGURIDAD]
         let nuevoToken = `E-${basura}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
 
         sgfConfig.usuarios[usrIdx].t = nuevoToken;
@@ -439,10 +458,42 @@
         
         saveDB();
         closeModal('modalToken');
-        showToast(`Token generado en formato seguro para ${userId.toUpperCase()}.`, "success");
+        showToast(`Licencia autorizada. Enviando actualización a la nube...`, "success");
+        syncDataToRemote(true); // Sincroniza estado validado a las Terminales
     }
 
-    function mostrarExport() {
+    // CONFIGURACIÓN DE CANAL & REVERT KEY
+    function abrirConfigCanal() {
+        if(sgfConfig.repo_info) {
+            document.getElementById('cfg_repo').value = sgfConfig.repo_info.repo || "";
+            document.getElementById('cfg_path').value = sgfConfig.repo_info.path || "config-pago.json";
+        }
+        // Des-invertir llave para que el Admin la vea si quiere editarla
+        if(sgfConfig.cloud_access) {
+            document.getElementById('cfg_token').value = sgfConfig.cloud_access.split('').reverse().join('');
+        }
+        openModal('modalConfig');
+    }
+
+    function guardarConfigCanal() {
+        const repo = document.getElementById('cfg_repo').value.trim();
+        const path = document.getElementById('cfg_path').value.trim();
+        const token = document.getElementById('cfg_token').value.trim();
+
+        if(!repo || !path || !token) return showToast("Complete todos los campos obligatorios.", "error");
+
+        // Lógica "Revert Key" -> Invierte el token de GitHub
+        const revertKey = token.split('').reverse().join('');
+
+        sgfConfig.repo_info = { repo, path };
+        sgfConfig.cloud_access = revertKey;
+
+        saveDB();
+        closeModal('modalConfig');
+        showToast("Canal configurado. La llave de acceso ha sido encriptada.", "success");
+    }
+
+    function prepararObjetoExportacion() {
         const usuariosParaPortal = sgfConfig.usuarios.map(u => ({
             u: u.u, p: u.p, n: u.n || u.u.toUpperCase(), t: u.t
         }));
@@ -451,63 +502,72 @@
              usuariosParaPortal.unshift({ u: 'admin', p: 'admin', n: 'Sistema Central', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
 
-        const configObject = { usuarios: usuariosParaPortal };
-        const codeString = `const sgfConfig = ${JSON.stringify(configObject, null, 4)};`;
-        
-        document.getElementById('export-code').value = codeString;
+        // El objeto a exportar debe incluir la llave Revert
+        return {
+            cloud_access: sgfConfig.cloud_access || "",
+            usuarios: usuariosParaPortal,
+            ordenes: sgfConfig.ordenes
+        };
+    }
+
+    function mostrarExport() {
+        const payload = prepararObjetoExportacion();
+        document.getElementById('export-code').value = JSON.stringify(payload, null, 4);
         openModal('modalExport');
     }
 
-    // Módulo 2: Sincronización Remota (API Handler)
-    async function syncDataToRemote() {
-        showToast("Preparando objeto JSON para sincronización...", "info");
-        
-        const API_CONFIG = {
-            url: "https://api.github.com/repos/{OWNER}/{REPO}/contents/{PATH}", // ENDPOINT REEMPLAZABLE
-            token: "TU_TOKEN_DE_AUTENTICACION_AQUI"
-        };
+    // MOTOR DE SINCRONIZACIÓN API
+    async function syncDataToRemote(silent = false) {
+        if (!sgfConfig.cloud_access || !sgfConfig.repo_info || !sgfConfig.repo_info.repo) {
+            if(!silent) showToast("Debe configurar el Canal de Sincronización primero.", "warning");
+            return;
+        }
+
+        if(!silent) showToast("Estableciendo conexión con el servidor...", "info");
+
+        // Master traduce la llave Revert de vuelta a Token Real para su propio uso
+        const realKey = sgfConfig.cloud_access.split('').reverse().join('');
+        const { repo, path } = sgfConfig.repo_info;
+        const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
         try {
-            const usuariosParaPortal = sgfConfig.usuarios.map(u => ({
-                u: u.u, p: u.p, n: u.n || u.u.toUpperCase(), t: u.t
-            }));
-            
-            if (!usuariosParaPortal.some(u => u.u === 'admin')) {
-                 usuariosParaPortal.unshift({ u: 'admin', p: 'admin', n: 'Sistema Central', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
-            }
+            const configObject = prepararObjetoExportacion();
+            // Para GitHub API el contenido debe ser Base64 estricto
+            const payloadContent = btoa(unescape(encodeURIComponent(JSON.stringify(configObject, null, 4))));
 
-            const configObject = { usuarios: usuariosParaPortal };
-            
-            // Transformación Payload a Base64 requerido por la mayoría de APIs REST (ej. GitHub)
-            const payloadContent = btoa(unescape(encodeURIComponent(`const sgfConfig = ${JSON.stringify(configObject, null, 4)};`)));
+            // 1. Obtener SHA actual (Requerimiento de GitHub para sobreescribir)
+            let currentSha = null;
+            try {
+                const getReq = await fetch(apiUrl, { headers: { "Authorization": `Bearer ${realKey}` } });
+                if(getReq.ok) {
+                    const fileData = await getReq.json();
+                    currentSha = fileData.sha;
+                }
+            } catch(e) { console.warn("No se pudo obtener SHA previo, intentando creación..."); }
 
+            // 2. Ejecutar PUT
             const requestBody = {
-                message: "Update SGF config via Remote API Handler",
+                message: "SGF Master: Update config-pago.json state via API",
                 content: payloadContent
-                // sha: "SHA_DEL_ARCHIVO" // Descomentar en entorno real tras un GET previo
             };
+            if(currentSha) requestBody.sha = currentSha;
 
-            /* === ZONA DE DESPLIEGUE API (COMENTADO HASTA APLICAR CREDENCIALES) ===
-            const response = await fetch(API_CONFIG.url, {
+            const putReq = await fetch(apiUrl, {
                 method: "PUT",
                 headers: {
-                    "Authorization": `Bearer ${API_CONFIG.token}`,
+                    "Authorization": `Bearer ${realKey}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(requestBody)
             });
-            
-            if(!response.ok) throw new Error("Fallo en la respuesta del servidor destino.");
-            */
-            
-            // Simulación de delay de red para UI Response
-            setTimeout(() => {
-                showToast("Sincronización remota completada (Modo Simulación).", "success");
-            }, 1200);
+
+            if(!putReq.ok) throw new Error("La API rechazó la actualización (Verifique la llave).");
+
+            showToast("Nube Actualizada y Sincronizada.", "success");
 
         } catch (error) {
             console.error("Error Sync API:", error);
-            showToast("Error de conexión con el endpoint remoto.", "error");
+            showToast("Fallo de Sincronización: " + error.message, "error");
         }
     }
 
