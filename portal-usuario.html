@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1 & 5. Limpieza de Metadatos -->
+    <!-- Metadatos actualizados -->
     <title>SGF CLOUD | Servicios Globales</title>
     <meta property="og:title" content="SGF CLOUD | Servicios Globales">
-    <meta property="og:description" content="Portal seguro para la gestión de Hosting y Licencias API.">
+    <meta property="og:description" content="Gestión segura de infraestructura y licencias de datos.">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -106,14 +106,14 @@
 <body>
 
 <div class="container">
-    <!-- 6. El Gatillo de Autonomía al Salir -->
+    <!-- El Gatillo de Autonomía -->
     <div id="force-reset">
         <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad SGF Cloud</h2>
-        <p style="color:var(--text-muted); max-width:400px; margin-bottom: 25px;">Para finalizar la sesión y proteger su Llave API, establezca sus credenciales privadas ahora.</p>
+        <p style="color:var(--text-muted); max-width:400px; margin-bottom: 25px;">Establezca sus credenciales privadas para proteger el acceso a su cuenta.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
-        <button class="btn-main" onclick="guardarReset()">ESTABLECER Y SALIR</button>
+        <button class="btn-main" onclick="guardarReset()">GUARDAR CREDENCIALES</button>
     </div>
 
     <div id="login-section">
@@ -127,7 +127,11 @@
     <div id="status-section">
         <div class="panel-header">
             <div id="display-user" style="font-weight: bold;">Sesión: ---</div>
-            <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
+            <div>
+                <!-- Botón de Configuración -->
+                <button onclick="abrirConfiguracion()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px; margin-right: 15px;"><i class="fa-solid fa-gear"></i></button>
+                <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
+            </div>
         </div>
 
         <div class="panel-body">
@@ -136,7 +140,7 @@
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
-                        Vencimiento: <b id="lbl-vence">---</b> | P. Acceso: <b id="lbl-terminal">---</b>
+                        Licencia activa hasta: <b id="lbl-vence">---</b>
                     </p>
                 </div>
 
@@ -148,8 +152,7 @@
                             <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
                         </button>
                     </div>
-                    <!-- 1. Limpieza de Identidad -->
-                    <span id="terminal-identidad">Terminal: ---</span>
+                    <span id="terminal-identidad">ID: ---</span>
                     <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
                 </div>
             </div>
@@ -158,21 +161,19 @@
                 <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
                 
                 <div id="form-inner">
-                    <!-- 2. UI de Selección: Llaves de Acción -->
                     <div class="tramite-grid">
                         <button class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
                             <i class="fa-solid fa-key"></i>
                             <span>RENOVAR LICENCIA VENCIDA</span>
                         </button>
-                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Licencia Activa')">
+                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
                             <i class="fa-solid fa-key"></i>
-                            <span>ACTUALIZAR LICENCIA ACTIVA</span>
+                            <span>ACTUALIZAR SERVICIO ACTIVO</span>
                         </button>
                     </div>
                     
                     <label style="font-size:11px; color:#555; font-weight:bold; margin-bottom: 8px; display:block;">Método de Pago</label>
                     
-                    <!-- 5. Datos de Pago y Metadatos -->
                     <div class="pay-methods-grid">
                         <div class="pay-btn" onclick="seleccionarPago(this, 'banco')">
                             <i class="fa-solid fa-building-columns"></i> Banco
@@ -202,7 +203,7 @@
                 <div id="verifying-display">
                     <i class="fa-solid fa-gear fa-spin" style="font-size: 30px; color: var(--warning);"></i>
                     <h4 style="color:var(--warning); margin:10px 0;">ORDEN #<span id="orden-id">---</span></h4>
-                    <p style="font-size: 11px;">ESPERANDO CONCILIACIÓN DEL MASTER</p>
+                    <p style="font-size: 11px;">PROCESANDO VALIDACIÓN... Espere la confirmación del sistema.</p>
                 </div>
             </div>
         </div>
@@ -210,28 +211,38 @@
 </div>
 
 <script>
-    // 3. Seguridad Nivel Mapa (Bloqueo de Sources y F12)
+    // Protocolo de Seguridad "Pánico" (Anti-Sources)
     document.addEventListener('contextmenu', event => event.preventDefault());
     
-    document.onkeydown = function(e) {
-        if(e.keyCode == 123) return false; // Bloquea F12
-        if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) return false;
-        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Bloquea Ver Código Fuente
-    };
+    // Detector de Consola Avanzado
+    const monitor = setInterval(() => {
+        const devtools = /./;
+        devtools.toString = function() {
+            window.location.href = "about:blank"; 
+        };
+        console.log('%c', devtools);
+    }, 1000);
 
-    // Anti-Debug infinito
-    setInterval(function() {
-        debugger;
-    }, 100);
+    // Bloqueo de Teclas
+    window.addEventListener('keydown', (e) => {
+        if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67))) {
+            window.location.href = "about:blank";
+            e.preventDefault();
+        }
+        if(e.ctrlKey && e.keyCode == 85) { // Ctrl+U
+            window.location.href = "about:blank";
+            e.preventDefault();
+        }
+    });
 
     // BASE DE DATOS MULTI-USUARIO (Cifrado Base64)
-    const dbKey = 'sgf_cloud_db_v9';
+    const dbKey = 'sgf_cloud_db_v10';
     let defaultData = {
         usuarios: [
-            { u: "admin", p: "admin", n: "Master", t: "E-MASTER-NODE-20991231-ROOTKEY" },
-            { u: "alcaldia", p: "12345678", n: "Sede Central", t: "E-SEDE-SC01-20250820-KEY" }
+            { u: "admin", p: "admin", t: "E-SYS-NODE-20991231-ROOTKEY" },
+            { u: "alcaldia", p: "12345678", t: "E-SEDE-SC01-20250820-KEY" }
         ],
-        ordenes: [] // Para sincronización con el Master
+        ordenes: []
     };
     
     let sgfConfig;
@@ -271,10 +282,9 @@
         if (!currentUser) return;
         const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
-        document.getElementById('lbl-terminal').innerText = currentUser.n; // Ajuste Identidad
         
-        // 1. Limpieza de Identidad: Etiqueta dinámica
-        document.getElementById('terminal-identidad').innerText = `Terminal: ${currentUser.u.toUpperCase()}-2026`;
+        // Limpieza de Identidad: Etiqueta dinámica ID
+        document.getElementById('terminal-identidad').innerText = `ID: ${currentUser.u.toUpperCase()}-2026`;
 
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
@@ -309,7 +319,7 @@
     const payData = {
         'banco': '<b>Transferencia Bancaria Nacional</b><br>Banco de Venezuela (0102)<br>Cuenta: 0102-XXXX-XXXX-XXXX-XXXX<br>RIF: J-XXXXXXXX-X<br>A nombre de: SGF Cloud Services C.A.',
         'binance': '<b>Binance Pay / USDT (TRC20)</b><br>Red: Tron (TRC20)<br>Wallet: TYPxxxxxxxxxxxxxxxxxxxxxxxxxxxxx99<br>Pay ID: 123456789',
-        'acuerdo': '<b>Acuerdo Directo con Master</b><br>La validación se realizará internamente. Indique un número de autorización o memo en el campo de referencia si aplica.'
+        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará internamente en el sistema. Indique un número de autorización o memo en el campo de referencia si aplica.'
     };
 
     function seleccionarPago(btn, tipo) {
@@ -323,11 +333,20 @@
     }
 
     function copiarLlave() {
-        navigator.clipboard.writeText(currentUser.t).then(() => alert("Llave copiada para el mapa."));
+        navigator.clipboard.writeText(currentUser.t).then(() => alert("Llave copiada."));
+    }
+
+    // Configuración para cambiar credenciales en cualquier momento
+    function abrirConfiguracion() {
+        document.getElementById('force-reset').style.display = 'flex';
     }
 
     function iniciarLogoutSeguro() {
-        document.getElementById('force-reset').style.display = 'flex';
+        if (currentUser && currentUser.u === 'admin' && currentUser.p === 'admin') {
+            document.getElementById('force-reset').style.display = 'flex';
+        } else {
+            location.reload();
+        }
     }
 
     function guardarReset() {
@@ -343,7 +362,7 @@
         }
         
         saveDB();
-        alert("Credenciales aseguradas correctamente. Cerrando sesión...");
+        alert("Credenciales actualizadas correctamente. Por favor inicie sesión nuevamente.");
         location.reload();
     }
 
@@ -359,11 +378,10 @@
 
         if(!r && pago !== "acuerdo") return alert("Indique la referencia o comprobante del pago.");
 
-        // 4. Sincronización con el Master (Persistencia Local)
         if (!sgfConfig.ordenes) sgfConfig.ordenes = [];
         sgfConfig.ordenes.push({
             id: id,
-            usuario: currentUser.u, // Identificación exacta para el Master
+            usuario: currentUser.u,
             tramite: selectedTramite,
             metodo: pago,
             referencia: r || 'N/A',
