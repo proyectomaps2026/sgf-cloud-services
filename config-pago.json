@@ -9,6 +9,15 @@
             "u": "alcaldia",
             "p": "admin",
             "t": "SGF-ALCA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wOS0zMA"
+        },
+        {
+            "user": "aura",
+            "id": "ID-AURA-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-03",
+            "u": "aura",
+            "p": "aura",
+            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
     "ordenes": [
