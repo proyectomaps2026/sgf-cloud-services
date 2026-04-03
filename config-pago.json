@@ -13,7 +13,7 @@
         {
             "user": "aura",
             "id": "ID-AURA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-05-03",
             "u": "aura",
             "p": "aura",
@@ -29,6 +29,15 @@
             "referencia": "77889866",
             "fecha": "2026-04-03T21:17:26.764Z",
             "estado": "Aprobada"
+        },
+        {
+            "id": "ORD-167369",
+            "usuario": "aura",
+            "tramite": "Actualizar Servicio Activo",
+            "metodo": "binance",
+            "referencia": "77889866",
+            "fecha": "2026-04-03T21:19:04.311Z",
+            "estado": "Pendiente"
         }
     ]
 }
