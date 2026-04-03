@@ -59,12 +59,25 @@
         .token-container { background: #f1f3f5; border: 1px dashed #ced4da; padding: 15px; border-radius: 8px; margin-top: 10px; }
         #token-display { font-family: monospace; font-size: 12px; color: #444; word-break: break-all; display: block; margin-bottom: 10px; }
         .btn-copy { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
+        
+        /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE --- */
+        .tramite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .tramite-btn {
+            background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 20px;
+            font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .tramite-btn i { font-size: 24px; }
+        .tramite-btn.warning { color: var(--warning); }
+        .tramite-btn.primary { color: var(--primary); }
+        .tramite-btn.active { 
+            box-shadow: 0 0 0 3px var(--accent);
+            border-color: var(--accent);
+            background-color: #f8fff9;
+        }
 
         /* FORMULARIO DE PAGO COMPLETO */
         #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: none; }
-        .bank-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .bank-card { padding: 10px; border-radius: 8px; font-size: 11px; border: 1px solid #eee; background: #f8f9ff; }
-        
         .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600; font-size: 13px; }
         .file-upload input { display: none; }
         
@@ -78,7 +91,7 @@
     <div id="force-reset">
         <i class="fa-solid fa-user-lock" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad de Nodo</h2>
-        <p style="color:var(--text-muted)">Establezca sus nuevas credenciales privadas para finalizar la sesión y proteger su Llave API.</p>
+        <p style="color:var(--text-muted)">Cree sus credenciales privadas para proteger su Llave API antes de salir.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
         <button class="btn-main" onclick="guardarReset()">ESTABLECER CREDENCIALES</button>
@@ -87,7 +100,7 @@
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">Servicios de Datos y Hosting Seguros</div>
-        <div class="input-group"><input type="text" id="ui" placeholder="Usuario"></div>
+        <div class="input-group"><input type="text" id="ui" placeholder="USUARIO"></div>
         <div class="input-group"><input type="password" id="pi" placeholder="Contraseña"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
     </div>
@@ -122,18 +135,20 @@
 
             <div id="payment-area" style="display: block;">
                 <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Renovación</h4>
-                <div class="bank-info-grid">
-                    <div class="bank-card"><b>PAGO MÓVIL</b><br>Mercantil | V-XXXXXXXX<br>04XX-XXXXXXX</div>
-                    <div class="bank-card" style="border-left: 3px solid #f3ba2f;"><b>BINANCE (USDT)</b><br>ID: 987654321<br>SGF_Cloud_Audit</div>
-                </div>
-
+                
                 <div id="form-inner">
-                    <label for="tipo-tramite" style="font-size:11px; color:#555; font-weight:bold;">Tipo de Solicitud</label>
-                    <select id="tipo-tramite" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd; margin-top: 4px;">
-                        <option>Renovar Llave Vencida</option>
-                        <option>Actualizar Licencia Existente</option>
-                    </select>
-
+                    <!-- BOTONES DE TRÁMITE INDEPENDIENTES -->
+                    <div class="tramite-grid">
+                        <button class="tramite-btn warning" onclick="seleccionarTramite(this, 'Renovar Llave Vencida')">
+                            <i class="fa-solid fa-key"></i>
+                            <span>RENOVAR LLAVE VENCIDA</span>
+                        </button>
+                        <button class="tramite-btn primary" onclick="seleccionarTramite(this, 'Actualizar Licencia Existente')">
+                            <i class="fa-solid fa-clock"></i>
+                            <span>ACTUALIZAR LICENCIA</span>
+                        </button>
+                    </div>
+                    
                     <label for="metodo-pago" style="font-size:11px; color:#555; font-weight:bold;">Método de Pago</label>
                     <select id="metodo-pago" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd; margin-top: 4px;">
                         <option>Transferencia Bancaria</option>
@@ -163,8 +178,8 @@
 </div>
 
 <script>
-    // BASE DE DATOS MULTI-USUARIO (SIMULACIÓN)
-    let sgfData = JSON.parse(localStorage.getItem('sgf_portal_db_v4')) || {
+    // BASE DE DATOS MULTI-USUARIO CON LISTA REAL
+    let sgfConfig = JSON.parse(localStorage.getItem('sgf_portal_db_v7')) || {
         usuarios: [
             { u: "admin", p: "admin", n: "Master", t: "E-MASTER-NODE-20991231-ROOTKEY" },
             { u: "alcaldia", p: "12345678", n: "Sede Central", t: "E-SEDE-SC01-20250820-KEY" }
@@ -172,20 +187,19 @@
     };
     
     let currentUser = null;
+    let selectedTramite = "";
 
     function validarLogin() {
         const user = document.getElementById('ui').value;
         const pass = document.getElementById('pi').value;
 
-        // Validación con .find() para buscar en la lista de usuarios
-        const foundUser = sgfData.usuarios.find(usr => usr.u === user && usr.p === pass);
+        // Búsqueda en el array de usuarios
+        const foundUser = sgfConfig.usuarios.find(usr => usr.u === user && usr.p === pass);
 
         if (foundUser) {
             currentUser = foundUser;
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-            
-            // Identidad dinámica en el header
             document.getElementById('display-user').innerText = "Sesión: " + currentUser.u;
             procesarLicencia();
         } else {
@@ -223,12 +237,19 @@
         }
     }
 
-    function copiarLlave() {
-        const t = document.getElementById('token-display').innerText;
-        navigator.clipboard.writeText(t).then(() => alert("Llave copiada para el mapa."));
+    function seleccionarTramite(btn, tramite) {
+        // Limpiar selección previa
+        document.querySelectorAll('.tramite-btn').forEach(b => b.classList.remove('active'));
+        // Activar el botón presionado
+        btn.classList.add('active');
+        // Guardar el valor
+        selectedTramite = tramite;
     }
 
-    // GATILLO DE AUTONOMÍA AL SALIR
+    function copiarLlave() {
+        navigator.clipboard.writeText(currentUser.t).then(() => alert("Llave copiada para el mapa."));
+    }
+
     function iniciarLogoutSeguro() {
         document.getElementById('force-reset').style.display = 'flex';
     }
@@ -237,22 +258,21 @@
         if (!currentUser) return;
         const nu = document.getElementById('nu').value;
         const np = document.getElementById('np').value;
-        if(nu.length < 4) return alert("El nuevo usuario debe tener al menos 4 caracteres.");
+        if (nu.length < 4) return alert("El nuevo usuario debe tener al menos 4 caracteres.");
         
-        // Encontrar el índice del usuario actual para actualizarlo en la "base de datos"
-        const userIndex = sgfData.usuarios.findIndex(usr => usr.u === currentUser.u);
+        const userIndex = sgfConfig.usuarios.findIndex(usr => usr.u === currentUser.u);
         if (userIndex !== -1) {
-            sgfData.usuarios[userIndex].u = nu;
-            sgfData.usuarios[userIndex].p = np;
+            sgfConfig.usuarios[userIndex].u = nu;
+            sgfConfig.usuarios[userIndex].p = np;
         }
         
-        localStorage.setItem('sgf_portal_db_v4', JSON.stringify(sgfData));
-        // Solo recarga después de guardar las nuevas credenciales
+        localStorage.setItem('sgf_portal_db_v7', JSON.stringify(sgfConfig));
         location.reload();
     }
 
     async function enviarOrden() {
-        const tramite = document.getElementById('tipo-tramite').value;
+        if (!selectedTramite) return alert("Por favor, seleccione un tipo de solicitud.");
+        
         const pago = document.getElementById('metodo-pago').value;
         const r = document.getElementById('ref').value;
         const f = document.getElementById('archivo').files[0];
@@ -260,7 +280,6 @@
 
         if(!r && pago !== "Acuerdo con Master") return alert("Indique la referencia del pago.");
 
-        // SUBIDA A CLOUDINARY
         if(f) {
             const fd = new FormData();
             fd.append('file', f);
@@ -276,7 +295,7 @@
         document.getElementById('status-indicator').className = "status-pill proximo";
         document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
         
-        alert(`Orden #${id} enviada. Trámite: "${tramite}", Pago: "${pago}".`);
+        alert(`Orden #${id} enviada. Trámite: "${selectedTramite}", Pago: "${pago}".`);
     }
 </script>
 </body>
