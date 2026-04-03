@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1 & 4. Limpieza de Metadatos -->
+    <!-- 6. Limpieza de Metadatos -->
     <title>SGF CLOUD | Servicios Globales</title>
     <meta property="og:title" content="SGF CLOUD | Servicios Globales">
     <meta property="og:description" content="Gestión segura de infraestructura y licencias de datos.">
@@ -28,6 +28,25 @@
             overflow: hidden; margin: 20px; position: relative;
         }
 
+        /* 4. Notificaciones Profesionales (Toast UI) */
+        #toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            padding: 15px 25px; border-radius: 8px; color: white; font-size: 14px; font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease forwards;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .toast-success { background: #00c853; } /* Verde esmeralda */
+        .toast-error { background: #d32f2f; }   /* Rojo intenso */
+        .toast-info { background: #1976d2; }    /* Azul cobalto */
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         /* CAPA DE BLOQUEO (RESET) */
         #force-reset {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -44,6 +63,7 @@
             width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;
         }
         .btn-main { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; max-width: 350px; transition: 0.3s; }
+        .btn-secondary { background: #757575; margin-top: 10px; }
 
         /* --- DASHBOARD --- */
         #status-section { display: none; }
@@ -65,13 +85,15 @@
         .btn-copy { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
         #terminal-identidad { font-size: 11px; font-weight: bold; color: var(--text-muted); margin-top: 15px; display: block; text-align: center; }
 
-        /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE (Card 1 y Card 2) --- */
+        /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE --- */
         .tramite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .tramite-btn {
             background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 20px;
             font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+            opacity: 1;
         }
+        .tramite-btn[disabled] { opacity: 0.5; cursor: not-allowed; border-color: #ddd; filter: grayscale(100%); }
         .tramite-btn i { font-size: 24px; }
         .tramite-btn.orange-card { color: var(--warning); }
         .tramite-btn.blue-card { color: var(--blue-pro); }
@@ -100,27 +122,31 @@
         .file-upload input { display: none; }
         
         .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #verifying-display { display: none; text-align: center; padding: 20px; background: #fffcf0; border-radius: 12px; border: 1px solid #ffe082; }
+        #verifying-display { display: none; text-align: center; padding: 30px; background: #e3f2fd; border-radius: 12px; border: 1px solid #90caf9; }
     </style>
 </head>
 <body>
 
+<div id="toast-container"></div>
+
 <div class="container">
-    <!-- El Gatillo de Autonomía -->
     <div id="force-reset">
         <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad SGF Cloud</h2>
         <p style="color:var(--text-muted); max-width:400px; margin-bottom: 25px;">Establezca sus credenciales privadas para proteger el acceso a su cuenta.</p>
-        <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
-        <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
+        <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario" onkeypress="handleEnter(event, guardarReset)"></div>
+        <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña" onkeypress="handleEnter(event, guardarReset)"></div>
         <button class="btn-main" onclick="guardarReset()">GUARDAR CREDENCIALES</button>
+        <!-- 3. Botón Volver -->
+        <button class="btn-main btn-secondary" onclick="cerrarConfiguracion()"><i class="fa-solid fa-arrow-left"></i> VOLVER / ATRÁS</button>
     </div>
 
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">Portal seguro para la gestión de Hosting y Licencias API</div>
-        <div class="input-group"><input type="text" id="ui" placeholder="USUARIO"></div>
-        <div class="input-group"><input type="password" id="pi" placeholder="Contraseña"></div>
+        <!-- 3. UX: Tecla Enter -->
+        <div class="input-group"><input type="text" id="ui" placeholder="USUARIO" onkeypress="handleEnter(event, validarLogin)"></div>
+        <div class="input-group"><input type="password" id="pi" placeholder="Contraseña" onkeypress="handleEnter(event, validarLogin)"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
     </div>
 
@@ -128,7 +154,6 @@
         <div class="panel-header">
             <div id="display-user" style="font-weight: bold;">Sesión: ---</div>
             <div>
-                <!-- 3. Botón de Configuración -->
                 <button onclick="abrirConfiguracion()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px; margin-right: 15px;"><i class="fa-solid fa-gear"></i></button>
                 <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
             </div>
@@ -140,7 +165,6 @@
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
-                        <!-- 1. Limpieza de Identidad -->
                         Licencia activa hasta: <b id="lbl-vence">---</b>
                     </p>
                 </div>
@@ -153,23 +177,22 @@
                             <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
                         </button>
                     </div>
-                    <!-- 3. ID de Terminal -->
+                    <!-- 5. Identidad ID Terminal -->
                     <span id="terminal-identidad">ID: ---</span>
                     <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
                 </div>
             </div>
 
             <div id="payment-area" style="display: block;">
-                <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
-                
                 <div id="form-inner">
-                    <!-- 3. UI de Trámites -->
+                    <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
+                    
                     <div class="tramite-grid">
-                        <button class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
+                        <button id="btn-tramite-renovar" class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
                             <i class="fa-solid fa-key"></i>
                             <span>RENOVAR LICENCIA VENCIDA</span>
                         </button>
-                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
+                        <button id="btn-tramite-actualizar" class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
                             <i class="fa-solid fa-key"></i>
                             <span>ACTUALIZAR SERVICIO ACTIVO</span>
                         </button>
@@ -177,7 +200,6 @@
                     
                     <label style="font-size:11px; color:#555; font-weight:bold; margin-bottom: 8px; display:block;">Método de Pago</label>
                     
-                    <!-- 4. Datos de Pago -->
                     <div class="pay-methods-grid">
                         <div class="pay-btn" onclick="seleccionarPago(this, 'banco')">
                             <i class="fa-solid fa-building-columns"></i> Banco
@@ -191,10 +213,8 @@
                     </div>
 
                     <div id="pay-details" class="pay-details-box"></div>
-                    
                     <input type="hidden" id="metodo-pago-seleccionado" value="">
-                    
-                    <input type="text" id="ref" placeholder="Nro de Referencia / Comprobante" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 5px;">
+                    <input type="text" id="ref" placeholder="Nro de Referencia / Comprobante" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 5px;" onkeypress="handleEnter(event, enviarOrden)">
                     
                     <label class="file-upload">
                         <input type="file" id="archivo" onchange="document.getElementById('file-name').innerText = this.files[0].name">
@@ -205,10 +225,9 @@
                 </div>
 
                 <div id="verifying-display">
-                    <i class="fa-solid fa-gear fa-spin" style="font-size: 30px; color: var(--warning);"></i>
-                    <h4 style="color:var(--warning); margin:10px 0;">ORDEN #<span id="orden-id">---</span></h4>
-                    <!-- 1. Limpieza de Identidad -->
-                    <p style="font-size: 11px;">PROCESANDO VALIDACIÓN... Espere la confirmación del sistema.</p>
+                    <i class="fa-solid fa-cloud-arrow-up fa-bounce" style="font-size: 40px; color: var(--blue-pro); margin-bottom: 15px;"></i>
+                    <h3 style="color:var(--primary); margin:0 0 10px 0;">SGF CLOUD</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">Su solicitud está siendo auditada.<br>Espere la liberación del servicio.</p>
                 </div>
             </div>
         </div>
@@ -216,10 +235,9 @@
 </div>
 
 <script>
-    // 1 & 2. Protocolo de Seguridad Ajustado (Inteligente)
+    // 5. Seguridad Anti-Sources
     document.addEventListener('contextmenu', event => event.preventDefault());
     
-    // Detección por redimensionamiento de ventana
     const threshold = 160;
     setInterval(() => {
         if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
@@ -227,26 +245,45 @@
         }
     }, 1000);
 
-    // Bloqueo inteligente de teclas
     window.addEventListener('keydown', (e) => {
-        if (e.keyCode == 123) { // F12
-            e.preventDefault(); return false;
-        }
-        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { // Ctrl+Shift+I/J/C
-            e.preventDefault(); return false;
-        }
-        if (e.ctrlKey && e.keyCode === 85) { // Ctrl+U
-            e.preventDefault(); return false;
-        }
+        if (e.keyCode == 123) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
     });
 
-    // BASE DE DATOS MULTI-USUARIO (Cifrado Base64)
-    const dbKey = 'sgf_cloud_db_v10';
+    // 4. Sistema Toast UI
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        let icon = 'fa-info-circle';
+        if(type === 'success') icon = 'fa-check-circle';
+        if(type === 'error') icon = 'fa-exclamation-triangle';
+
+        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideIn 0.3s ease reverse forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // 3. UX: Enter Key Handler
+    function handleEnter(e, callback) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            callback();
+        }
+    }
+
+    // BASE DE DATOS (Limpieza Master)
+    const dbKey = 'sgf_cloud_db_v11';
     let defaultData = {
         usuarios: [
-            // Limpieza del nombre interno
-            { u: "admin", p: "admin", t: "E-SYS-NODE-20991231-ROOTKEY" },
-            { u: "alcaldia", p: "12345678", t: "E-SEDE-SC01-20250820-KEY" }
+            { u: "admin", p: "admin", t: "E-SYS-NODE-20991231-ROOTKEY", estado: "LIBRE", token_orden: "" },
+            { u: "alcaldia", p: "12345678", t: "E-SEDE-SC01-20250820-KEY", estado: "LIBRE", token_orden: "" }
         ],
         ordenes: []
     };
@@ -266,6 +303,7 @@
 
     let currentUser = null;
     let selectedTramite = "";
+    let isLicenseActive = false;
 
     function validarLogin() {
         const user = document.getElementById('ui').value;
@@ -278,9 +316,18 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
             document.getElementById('display-user').innerText = "Sesión: " + currentUser.u;
+            
+            // 2. Liberación Automática si el token cambió (Resolución de auditoría)
+            if (currentUser.estado === "PENDIENTE" && currentUser.token_orden !== currentUser.t) {
+                currentUser.estado = "LIBRE";
+                saveDB();
+                showToast("Su servicio ha sido liberado exitosamente.", "success");
+            }
+
             procesarLicencia();
+            verificarEstadoAuditoria();
         } else {
-            alert("Credenciales incorrectas.");
+            showToast("Credenciales incorrectas.", "error");
         }
     }
 
@@ -288,8 +335,6 @@
         if (!currentUser) return;
         const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
-        
-        // 3. Limpieza de Identidad: Etiqueta dinámica ID
         document.getElementById('terminal-identidad').innerText = `ID: ${currentUser.u.toUpperCase()}-2026`;
 
         const partes = token.split('-');
@@ -299,12 +344,14 @@
             const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
             const hoy = new Date();
             const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
+            
+            isLicenseActive = diff > 0;
 
             const ind = document.getElementById('status-indicator');
             const border = document.getElementById('status-card-border');
             document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
 
-            if(diff > 0) {
+            if(isLicenseActive) {
                 ind.className = "status-pill activo";
                 ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS)`;
                 border.style.borderTop = "4px solid var(--accent)";
@@ -313,10 +360,39 @@
                 ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>BLOQUEADO';
                 border.style.borderTop = "4px solid var(--danger)";
             }
+
+            // 1. Lógica de Trámite Inteligente
+            const btnRenovar = document.getElementById('btn-tramite-renovar');
+            const btnActualizar = document.getElementById('btn-tramite-actualizar');
+            
+            if (isLicenseActive) {
+                btnRenovar.setAttribute('disabled', 'true');
+                btnActualizar.removeAttribute('disabled');
+            } else {
+                btnActualizar.setAttribute('disabled', 'true');
+                btnRenovar.removeAttribute('disabled');
+            }
+        }
+    }
+
+    // 2. Estado de Carga Persistente
+    function verificarEstadoAuditoria() {
+        if (currentUser && currentUser.estado === "PENDIENTE") {
+            document.getElementById('form-inner').style.display = 'none';
+            document.getElementById('verifying-display').style.display = 'block';
+        } else {
+            document.getElementById('form-inner').style.display = 'block';
+            document.getElementById('verifying-display').style.display = 'none';
         }
     }
 
     function seleccionarTramite(btn, tramite) {
+        if (btn.hasAttribute('disabled')) {
+            if (isLicenseActive) showToast("Su licencia está activa. Seleccione 'Actualizar'.", "error");
+            else showToast("Su licencia está vencida. Seleccione 'Renovar'.", "error");
+            return;
+        }
+
         document.querySelectorAll('.tramite-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedTramite = tramite;
@@ -325,7 +401,7 @@
     const payData = {
         'banco': '<b>Transferencia Bancaria Nacional</b><br>Banco de Venezuela (0102)<br>Cuenta: 0102-XXXX-XXXX-XXXX-XXXX<br>RIF: J-XXXXXXXX-X<br>A nombre de: SGF Cloud Services C.A.',
         'binance': '<b>Binance Pay / USDT (TRC20)</b><br>Red: Tron (TRC20)<br>Wallet: TYPxxxxxxxxxxxxxxxxxxxxxxxxxxxxx99<br>Pay ID: 123456789',
-        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará internamente en el sistema. Indique un número de autorización o memo en el campo de referencia si aplica.'
+        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará en el Sistema Central. Indique un número de autorización o memo en el campo de referencia si aplica.'
     };
 
     function seleccionarPago(btn, tipo) {
@@ -339,16 +415,25 @@
     }
 
     function copiarLlave() {
-        navigator.clipboard.writeText(currentUser.t).then(() => alert("Llave copiada."));
+        navigator.clipboard.writeText(currentUser.t).then(() => showToast("Llave copiada exitosamente.", "success"));
     }
 
     function abrirConfiguracion() {
         document.getElementById('force-reset').style.display = 'flex';
     }
 
-    // 5. Lógica de Salida
+    function cerrarConfiguracion() {
+        // Solo permite cerrar si no es el admin por defecto
+        if (currentUser.u === 'admin' && currentUser.p === 'admin') {
+            showToast("Debe establecer credenciales privadas por seguridad.", "error");
+            return;
+        }
+        document.getElementById('force-reset').style.display = 'none';
+    }
+
     function iniciarLogoutSeguro() {
         if (currentUser && currentUser.u === 'admin' && currentUser.p === 'admin') {
+            showToast("Por seguridad, establezca nuevas credenciales antes de salir.", "info");
             document.getElementById('force-reset').style.display = 'flex';
         } else {
             location.reload();
@@ -359,7 +444,10 @@
         if (!currentUser) return;
         const nu = document.getElementById('nu').value;
         const np = document.getElementById('np').value;
-        if (nu.length < 4) return alert("El nuevo usuario debe tener al menos 4 caracteres.");
+        if (nu.length < 4) {
+            showToast("El nuevo usuario debe tener al menos 4 caracteres.", "error");
+            return;
+        }
         
         const userIndex = sgfConfig.usuarios.findIndex(usr => usr.u === currentUser.u);
         if (userIndex !== -1) {
@@ -368,21 +456,28 @@
         }
         
         saveDB();
-        alert("Credenciales actualizadas correctamente. Por favor inicie sesión nuevamente.");
-        location.reload();
+        showToast("Credenciales actualizadas. Reiniciando portal...", "success");
+        setTimeout(() => location.reload(), 1500);
     }
 
     async function enviarOrden() {
-        if (!selectedTramite) return alert("Por favor, seleccione un tipo de trámite.");
+        if (!selectedTramite) { showToast("Seleccione el tipo de trámite correspondiente.", "error"); return; }
         
         const pago = document.getElementById('metodo-pago-seleccionado').value;
-        if (!pago) return alert("Por favor, seleccione un método de pago.");
+        if (!pago) { showToast("Seleccione un método de pago.", "error"); return; }
 
         const r = document.getElementById('ref').value;
         const f = document.getElementById('archivo').files[0];
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
 
-        if(!r && pago !== "acuerdo") return alert("Indique la referencia o comprobante del pago.");
+        if(!r && pago !== "acuerdo") { showToast("Indique la referencia o comprobante del pago.", "error"); return; }
+
+        // 2. Persistencia en Pendiente
+        const userIndex = sgfConfig.usuarios.findIndex(usr => usr.u === currentUser.u);
+        sgfConfig.usuarios[userIndex].estado = "PENDIENTE";
+        sgfConfig.usuarios[userIndex].token_orden = currentUser.t; // Guardamos el token actual para comparar luego
+        currentUser.estado = "PENDIENTE";
+        currentUser.token_orden = currentUser.t;
 
         if (!sgfConfig.ordenes) sgfConfig.ordenes = [];
         sgfConfig.ordenes.push({
@@ -401,15 +496,11 @@
             fd.append('file', f);
             fd.append('upload_preset', 'ordenes');
             fd.append('public_id', `pago_${id}_${currentUser.u}`);
-            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd }).catch(()=>console.log("Upload pending..."));
+            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd }).catch(()=>console.log("Upload pending"));
         }
 
-        document.getElementById('orden-id').innerText = id;
-        document.getElementById('form-inner').style.display = 'none';
-        document.getElementById('verifying-display').style.display = 'block';
-        
-        document.getElementById('status-indicator').className = "status-pill proximo";
-        document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
+        verificarEstadoAuditoria();
+        showToast("Orden enviada exitosamente al Servicio de Validación.", "success");
     }
 </script>
 </body>
