@@ -13,12 +13,22 @@
         {
             "user": "aura",
             "id": "ID-AURA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-05-03",
             "u": "aura",
             "p": "aura",
             "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
-    "ordenes": []
+    "ordenes": [
+        {
+            "id": "ORD-127615",
+            "usuario": "aura",
+            "tramite": "Renovar Licencia Vencida",
+            "metodo": "binance",
+            "referencia": "77889866",
+            "fecha": "2026-04-03T21:17:26.764Z",
+            "estado": "Pendiente"
+        }
+    ]
 }
