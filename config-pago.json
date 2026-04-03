@@ -4,12 +4,22 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-05-03",
             "u": "alcaldia",
             "p": "admin",
             "t": "SGF-ALCA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNS0wMw"
         }
     ],
-    "ordenes": []
+    "ordenes": [
+        {
+            "id": "ORD-236671",
+            "usuario": "alcaldia",
+            "tramite": "Actualizar Servicio Activo",
+            "metodo": "acuerdo",
+            "referencia": "N/A",
+            "fecha": "2026-04-03T20:55:50.643Z",
+            "estado": "Pendiente"
+        }
+    ]
 }
