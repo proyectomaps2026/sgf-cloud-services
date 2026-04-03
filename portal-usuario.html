@@ -6,138 +6,144 @@
     <title>SGF | PORTAL DE USUARIO</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* MANTENEMOS TU DISEÑO EXACTO */
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00ff41; --warning: #ffcc00; --danger: #ff3333; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        :root { --bg: #f8f9fa; --white: #ffffff; --primary: #1a237e; --accent: #00c853; --warning: #fbc02d; --danger: #d32f2f; --text: #333; }
         
-        .card { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #333; width: 380px; text-align: center; position: relative; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
         
-        /* LA CAPA DE BLOQUEO (RESET) - Se activa solo si es admin/admin */
-        #bloqueo-seguridad { 
+        .main-card { background: var(--white); padding: 40px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 400px; text-align: center; position: relative; border: 1px solid #eee; }
+
+        /* CAPA DE BLOQUEO (RESET / PRIMERA VEZ) */
+        #lock-screen { 
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: var(--card); border-radius: 20px; z-index: 100; padding: 30px; box-sizing: border-box;
-            flex-direction: column; justify-content: center; align-items: center; border: 2px solid var(--danger);
+            background: var(--white); border-radius: 25px; z-index: 100; padding: 40px; box-sizing: border-box;
+            flex-direction: column; justify-content: center; align-items: center;
         }
 
-        .status-pill { padding: 10px; border-radius: 50px; font-weight: bold; margin-bottom: 20px; display: inline-block; width: 80%; }
-        .activo { background: rgba(0, 255, 65, 0.1); color: var(--success); }
-        .proximo { background: rgba(255, 204, 0, 0.1); color: var(--warning); }
-        .vencido { background: rgba(255, 51, 51, 0.1); color: var(--danger); }
+        .status-pill { padding: 12px 25px; border-radius: 50px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin-bottom: 25px; display: inline-block; }
+        .activo { background: rgba(0, 200, 83, 0.1); color: var(--accent); }
+        .vencido { background: rgba(211, 47, 47, 0.1); color: var(--danger); }
 
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; }
+        .node-title { font-size: 24px; margin: 10px 0; color: var(--primary); font-weight: 800; }
+        .info-label { color: #888; font-size: 14px; margin-bottom: 20px; }
+
+        input, select { width: 100%; padding: 14px; margin: 10px 0; background: #f1f3f5; border: 1px solid #e9ecef; border-radius: 12px; box-sizing: border-box; font-size: 14px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+
+        #pay-form { margin-top: 25px; padding-top: 25px; border-top: 1px dashed #ddd; text-align: left; }
+        .token-footer { font-family: monospace; font-size: 10px; color: #bbb; margin-top: 30px; word-break: break-all; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div id="bloqueo-seguridad">
-        <i class="fa-solid fa-lock" style="font-size: 40px; color: var(--danger); margin-bottom: 15px;"></i>
-        <h3 style="margin:0">SEGURIDAD REQUERIDA</h3>
-        <p style="font-size: 12px; color: #888;">Debes cambiar tu usuario y clave antes de continuar.</p>
-        <input type="text" id="new_u" placeholder="Nuevo Usuario">
-        <input type="password" id="new_p" placeholder="Nueva Contraseña">
-        <button class="btn" onclick="cambiarCredencialesMaster()">ACTUALIZAR ACCESO</button>
+<div class="main-card">
+    <div id="lock-screen">
+        <i class="fa-solid fa-shield-check" style="font-size: 50px; color: var(--primary); margin-bottom: 20px;"></i>
+        <h3 style="margin:0">ACTUALIZAR ACCESO</h3>
+        <p style="font-size: 13px; color: #666;">El Master ha solicitado un cambio de credenciales obligatorio.</p>
+        <input type="text" id="nu" placeholder="Nuevo Usuario Personal">
+        <input type="password" id="np" placeholder="Nueva Contraseña">
+        <button class="btn btn-accent" onclick="actualizarCredenciales()">GUARDAR Y ENTRAR</button>
     </div>
 
-    <div id="status-indicator" class="status-pill proximo">
-        <i class="fa-solid fa-circle-notch fa-spin"></i><br>VERIFICANDO...
+    <div id="pill" class="status-pill">VERIFICANDO...</div>
+    
+    <div id="icon-status" style="font-size: 60px; margin-bottom: 15px;">
+        <i class="fa-solid fa-spinner fa-spin" style="color:#ddd"></i>
     </div>
 
-    <h2 id="node-id" style="margin: 10px 0;">---</h2>
-    <p id="vence-text" style="color: #888; font-size: 14px;">Cargando licencia...</p>
+    <div id="nid" class="node-title">---</div>
+    <div id="vtxt" class="info-label">Sincronizando licencia...</div>
 
-    <div id="form-pago" style="display: none; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">
-        <label style="font-size: 12px; display: block; text-align: left;">Referencia de Pago</label>
-        <input type="text" id="refBancaria" placeholder="Número de confirmación">
-        <select id="metodoPago">
+    <div id="pay-form" style="display: none;">
+        <b style="font-size: 14px; color: var(--primary);">Reportar Renovación</b>
+        <input type="text" id="ref" placeholder="Referencia de transferencia">
+        <select id="met">
             <option>Pago Móvil</option>
-            <option>Zelle</option>
-            <option>Efectivo / Acuerdo Directo</option>
+            <option>Zelle / Divisas</option>
+            <option>Transferencia Bancaria</option>
         </select>
-        <button class="btn" onclick="enviarPagoAuditoria()">INFORMAR PAGO AL MASTER</button>
+        <button class="btn btn-main" onclick="enviarPago()">INFORMAR PAGO AL MASTER</button>
     </div>
 
-    <div id="token-maestro" style="font-size: 9px; color: #444; margin-top: 20px; word-break: break-all;">---</div>
+    <div id="tkn" class="token-footer">---</div>
 </div>
 
 <script>
-    // ESTO VIENE DEL CONFIG.JS EN GITHUB
-    let configSGF = JSON.parse(localStorage.getItem('sgf_config_live')) || {
-        usuario: "admin",
-        clave: "admin",
-        nodo: "SC-01",
-        token: "E-XJ92L-SC01-20260402-SEMILLA" // Token ejemplo
+    // DATA REMOTA (Config.js)
+    let sgfData = JSON.parse(localStorage.getItem('sgf_portal_config')) || {
+        u: "admin",
+        p: "admin",
+        n: "MICH-01",
+        t: "E-RANDOM-MICH01-20260402-SEMILLA"
     };
 
-    function validarSistema() {
-        // 1. CHEQUEO DE RESET (Si es admin/admin, bloqueamos)
-        if(configSGF.usuario === "admin" && configSGF.clave === "admin") {
-            document.getElementById('bloqueo-seguridad').style.display = 'flex';
+    function init() {
+        // 1. Bloqueo si no han cambiado la clave
+        if(sgfData.u === "admin" && sgfData.p === "admin") {
+            document.getElementById('lock-screen').style.display = 'flex';
             return;
         }
 
-        // 2. LÓGICA DE TU TOKEN (Decodificación de fecha Aura)
-        const token = configSGF.token;
-        document.getElementById('token-maestro').innerText = "LICENCIA: " + token;
-        document.getElementById('node-id').innerText = configSGF.nodo;
+        // 2. Decodificar Token con fecha inyectada
+        const token = sgfData.t;
+        document.getElementById('nid').innerText = sgfData.n;
+        document.getElementById('tkn').innerText = "LICENCIA: " + token;
 
         const partes = token.split('-');
         if(partes[0] === "E") {
-            // Sacamos la fecha del chorizo (posición 3)
-            const f = partes[3]; // 20260402
-            const fechaVence = new Date(`${f.substring(0,4)}-${f.substring(4,6)}-${f.substring(6,8)}`);
+            const fRaw = partes[3]; // YYYYMMDD
+            const fechaVence = new Date(`${fRaw.substring(0,4)}-${fRaw.substring(4,6)}-${fRaw.substring(6,8)}`);
             const hoy = new Date();
-            
-            const diff = Math.ceil((fechaVence - hoy) / (1000 * 60 * 60 * 24));
+            const dias = Math.ceil((fechaVence - hoy) / (1000 * 60 * 60 * 24));
 
-            const pill = document.getElementById('status-indicator');
-            const venceTxt = document.getElementById('vence-text');
-            const form = document.getElementById('form-pago');
+            const pill = document.getElementById('pill');
+            const vtxt = document.getElementById('vtxt');
+            const icon = document.getElementById('icon-status');
+            const form = document.getElementById('pay-form');
 
-            if(diff > 0) {
+            if(dias > 0) {
                 pill.className = "status-pill activo";
-                pill.innerHTML = '<i class="fa-solid fa-check-double"></i><br>LICENCIA ACTIVA';
-                venceTxt.innerText = "Vence el: " + fechaVence.toLocaleDateString();
-                venceTxt.style.color = "var(--success)";
+                pill.innerText = "SISTEMA ACTIVO";
+                icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--accent)"></i>';
+                vtxt.innerText = "Vencimiento: " + fechaVence.toLocaleDateString();
                 form.style.display = "none";
             } else {
                 pill.className = "status-pill vencido";
-                pill.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><br>LICENCIA EXPIRADA';
-                venceTxt.innerText = "Acceso restringido";
-                venceTxt.style.color = "var(--danger)";
+                pill.innerText = "SISTEMA BLOQUEADO";
+                icon.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i>';
+                vtxt.innerText = "Licencia expirada. Por favor, renueve.";
                 form.style.display = "block";
             }
         }
     }
 
-    function cambiarCredencialesMaster() {
-        const u = document.getElementById('new_u').value;
-        const p = document.getElementById('new_p').value;
-        if(u.length < 4 || u === "admin") return alert("Usuario no válido");
+    function actualizarCredenciales() {
+        const u = document.getElementById('nu').value;
+        const p = document.getElementById('np').value;
+        if(u.length < 4 || u === "admin") return alert("Usuario no permitido");
 
-        configSGF.usuario = u;
-        configSGF.clave = p;
-        localStorage.setItem('sgf_config_live', JSON.stringify(configSGF));
-        
-        alert("¡Acceso actualizado! Ahora el portal es tuyo.");
+        sgfData.u = u;
+        sgfData.p = p;
+        localStorage.setItem('sgf_portal_config', JSON.stringify(sgfData));
         location.reload();
     }
 
-    function enviarPagoAuditoria() {
-        const ref = document.getElementById('refBancaria').value;
-        if(!ref) return alert("Falta Referencia");
+    function enviarPago() {
+        const r = document.getElementById('ref').value;
+        if(!r) return alert("Indique la referencia");
 
-        // Mandamos a la bandeja del Master
-        let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
-        bandeja.push({ id: configSGF.nodo, referencia: ref, metodo: document.getElementById('metodoPago').value });
-        localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
+        // Guardar en la bandeja de auditoría para el Master
+        let aud = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
+        aud.push({ nodo: sgfData.n, ref: r, met: document.getElementById('met').value });
+        localStorage.setItem('bandeja_auditoria', JSON.stringify(aud));
 
-        alert("Pago enviado. Esperando que el Master genere tu nuevo token.");
-        document.getElementById('form-pago').innerHTML = "<p style='color:var(--warning)'>Esperando validación remota...</p>";
+        alert("Pago enviado. El Master procesará su nuevo token en breve.");
+        document.getElementById('pay-form').innerHTML = "<p style='color:var(--warning); text-align:center;'><b>Esperando validación remota...</b></p>";
     }
 
-    validarSistema();
+    init();
 </script>
 
 </body>
