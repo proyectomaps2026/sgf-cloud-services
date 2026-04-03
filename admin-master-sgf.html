@@ -3,556 +3,621 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CLOUD | Servicios Globales</title>
-    <meta property="og:title" content="SGF CLOUD | Servicios Globales">
-    <meta property="og:description" content="Gestión segura de infraestructura y licencias de datos.">
-    
+    <title>SGF MASTER | Central de Validación de Datos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* ESCUDO DE INVISIBILIDAD - Por defecto todo el cuerpo está invisible y sin interacciones */
-        body {
-            visibility: hidden; 
-            opacity: 0;
-            background-color: #ffffff; /* Pantalla en blanco */
-            transition: opacity 0.8s ease, visibility 0.8s ease;
-        }
-
-        :root {
-            --primary: #1a237e; --accent: #00c853; --bg: #f0f2f5;
-            --danger: #d32f2f; --warning: #f57c00; --white: #ffffff;
-            --text-main: #333; --text-muted: #666; --blue-pro: #1976d2;
-        }
-
-        body.unlocked {
-            visibility: visible;
-            opacity: 1;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg); margin: 0; display: flex;
-            justify-content: center; align-items: center; min-height: 100vh;
-        }
-
-        .container {
-            background: var(--white); width: 100%; max-width: 850px;
-            border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            overflow: hidden; margin: 20px; position: relative;
-        }
-
-        #toast-container {
-            position: fixed; top: 20px; right: 20px; z-index: 9999;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .toast {
-            padding: 15px 25px; border-radius: 8px; color: white; font-size: 14px; font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease forwards;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .toast-success { background: #00c853; }
-        .toast-error { background: #d32f2f; }
-        .toast-info { background: #1976d2; }
+        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; --info: #00bcd4; --purple: #9c27b0; }
+        body { font-family: 'Segoe UI', Inter, sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
         
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        #force-reset {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.98); z-index: 999; padding: 60px;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center;
-        }
-
-        #login-section { padding: 60px 50px; text-align: center; display: none; }
-        .logo-header { font-size: 32px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1px; }
-        .subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 14px; font-weight: 500; }
-        .input-group { margin-bottom: 15px; max-width: 350px; margin-left: auto; margin-right: auto; }
-        input[type="text"], input[type="password"] {
-            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;
-        }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; max-width: 350px; transition: 0.3s; }
-        .btn-secondary { background: #757575; margin-top: 10px; }
-
-        #status-section { display: none; }
-        .panel-header { background: var(--primary); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
-        .panel-body { padding: 40px; }
-        .main-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 25px; }
-
-        .card-box { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 25px; position: relative; }
-        .card-box h4 { margin-top: 0; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-
-        .status-pill { padding: 20px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 18px; margin: 20px 0; }
-        .vencido { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
-        .activo { background: #e8f5e9; color: var(--accent); border: 1px solid #a5d6a7; }
-        .proximo { background: #fff8e1; color: var(--warning); border: 1px solid #ffe082; }
-
-        .token-container { background: #f1f3f5; border: 1px dashed #ced4da; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: center; }
-        #token-display { font-family: monospace; font-size: 12px; color: #444; word-break: break-all; display: block; margin-bottom: 10px; }
-        .btn-copy { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
-        #terminal-identidad { font-size: 11px; font-weight: bold; color: var(--text-muted); margin-top: 15px; display: block; text-align: center; }
-
-        .tramite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .tramite-btn { background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 20px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; opacity: 1; }
-        .tramite-btn[disabled] { opacity: 0.5; cursor: not-allowed; border-color: #ddd; filter: grayscale(100%); }
-        .tramite-btn i { font-size: 24px; }
-        .tramite-btn.orange-card { color: var(--warning); }
-        .tramite-btn.blue-card { color: var(--blue-pro); }
-        .tramite-btn.active.orange-card { border-color: var(--warning); background-color: #fff8e1; box-shadow: 0 0 0 2px var(--warning); }
-        .tramite-btn.active.blue-card { border-color: var(--blue-pro); background-color: #e3f2fd; box-shadow: 0 0 0 2px var(--blue-pro); }
-
-        .pay-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .pay-btn { background: #f8f9fa; border: 1px solid #ddd; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.2s; color: var(--text-main); }
-        .pay-btn i { font-size: 18px; }
-        .pay-btn:hover { background: #eef2f5; }
-        .pay-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        .pay-details-box { background: #f4f6f8; border-left: 4px solid var(--primary); padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; font-size: 12px; display: none; color: #444; line-height: 1.5; }
-
-        #payment-area { margin-top: 25px; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #ddd; display: block; }
-        .file-upload { background: #444; color: white; padding: 12px; border-radius: 6px; display: block; text-align: center; cursor: pointer; margin: 15px 0; font-weight: 600; font-size: 13px; }
-        .file-upload input { display: none; }
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #222; padding: 20px; position: fixed; box-sizing: border-box;}
+        .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         
-        .btn-success { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #verifying-display { display: none; text-align: center; padding: 30px; background: #e3f2fd; border-radius: 12px; border: 1px solid #90caf9; }
+        #sync-status { font-size: 11px; color: #888; text-align: center; margin-bottom: 20px; font-weight: bold; padding: 10px; border-radius: 8px; background: #111; }
+        .status-online { color: var(--success) !important; border: 1px solid rgba(0, 200, 83, 0.3); background: rgba(0, 200, 83, 0.1) !important; }
+        .status-offline { color: var(--danger) !important; border: 1px solid rgba(255, 51, 51, 0.3); background: rgba(255, 51, 51, 0.1) !important; }
+        .status-warning { color: var(--warning) !important; border: 1px solid rgba(255, 204, 0, 0.3); background: rgba(255, 204, 0, 0.1) !important; }
+
+        .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        
+        .sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 10px; transition: all 0.3s ease; }
+        .sync-btn:hover { background: var(--info); color: white; }
+        .config-btn { background: rgba(156, 39, 176, 0.1); color: var(--purple); border: 1px solid rgba(156, 39, 176, 0.2); margin-top: 20px; }
+        .config-btn:hover { background: var(--purple); color: white; }
+        .reset-btn { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.2); margin-top: 10px; }
+        .reset-btn:hover { background: var(--danger); color: white; }
+
+        /* Main Content */
+        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+        
+        /* Stats */
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #222; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
+        .stat-card.stat-warn::before { background: var(--warning); }
+        .stat-card.stat-success::before { background: var(--success); }
+        .stat-card h3 { margin: 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card p { font-size: 28px; margin: 10px 0 0 0; font-weight: bold; }
+
+        /* Table Design */
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #222; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #111; padding: 18px 20px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222; }
+        td { padding: 18px 20px; border-bottom: 1px solid #222; font-size: 13px; vertical-align: middle; }
+        tr:hover td { background: #1a1a1f; }
+        
+        .status-pill { padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-active { background: rgba(0, 200, 83, 0.1); color: var(--success); border: 1px solid rgba(0, 200, 83, 0.2); }
+        .status-waiting { background: rgba(255, 204, 0, 0.1); color: var(--warning); border: 1px solid rgba(255, 204, 0, 0.2); }
+        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.2); }
+        
+        .badge-urgente { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.3); }
+        .badge-normal { background: rgba(25, 118, 210, 0.1); color: var(--blue-pro); border: 1px solid rgba(25, 118, 210, 0.3); }
+
+        /* Actions */
+        .btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #0050d0; }
+        .btn-action { background: #111; color: #ccc; border: 1px solid #333; margin-right: 5px; }
+        .btn-action:hover { border-color: var(--primary); color: white; background: #1a1a1f; }
+        .btn-danger { background: var(--danger); color: white; margin-right: 5px;}
+        .btn-danger:hover { background: #c00; }
+        
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; margin-bottom: 10px; }
+        input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
+        
+        /* Notificaciones Toast */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; min-width: 250px;}
+        .toast-success { background: var(--success); color: #000; }
+        .toast-error { background: var(--danger); color: white; }
+        .toast-warning { background: var(--warning); color: #000; }
+        .toast-info { background: var(--info); color: #000; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Visor de Comprobantes */
+        .img-container { position: relative; display: inline-block; }
+        .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
+        .img-container:hover .img-thumb { border-color: var(--primary); }
+        .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); right: 60px; top: -150px; background: #111; }
+        .img-container:hover .img-preview { display: block; }
     </style>
 </head>
 <body>
 
 <div id="toast-container"></div>
 
-<div class="container">
+<div class="sidebar">
+    <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
     
-    <!-- PANTALLA DE CAMBIO DE CLAVE -->
-    <div id="force-reset">
-        <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
-        <h2>Seguridad SGF Cloud</h2>
-        <p style="color:var(--text-muted); max-width:400px; margin-bottom: 25px;">Establezca sus credenciales privadas para proteger el acceso a su cuenta.</p>
-        <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario" onkeypress="handleEnter(event, guardarReset)"></div>
-        <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña" onkeypress="handleEnter(event, guardarReset)"></div>
-        <button class="btn-main" onclick="guardarReset()">GUARDAR CREDENCIALES</button>
-        <button id="btn-volver" class="btn-main btn-secondary" onclick="cerrarConfiguracion()"><i class="fa-solid fa-arrow-left"></i> CANCELAR / VOLVER</button>
+    <div id="sync-status"><i class="fa-solid fa-cloud"></i> Esperando Conexión...</div>
+
+    <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
+    <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
+    
+    <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configurar Llave (GitHub)</div>
+    
+    <!-- BOTÓN RESCATE (LANZALLAMAS) -->
+    <div class="nav-item sync-btn" id="btn-force-sync" onclick="sincronizarConNube()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
+    
+    <!-- BOTÓN RESET CACHÉ DE EMERGENCIA -->
+    <div class="nav-item reset-btn" onclick="resetCache()"><i class="fa-solid fa-skull"></i> Reset Caché (Emergencia)</div>
+</div>
+
+<div class="main" id="view-clientes">
+    <div class="header">
+        <h1>Terminales de Datos</h1>
+        <button class="btn btn-primary" onclick="openModal('modalNuevo')"><i class="fa-solid fa-plus"></i> Registrar Terminal</button>
     </div>
 
-    <!-- PANTALLA DE LOGIN -->
-    <div id="login-section">
-        <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
-        <div class="subtitle">Portal seguro para la gestión de Hosting y Licencias API</div>
-        <div class="input-group"><input type="text" id="ui" placeholder="Usuario / Terminal" onkeypress="handleEnter(event, validarLogin)"></div>
-        <div class="input-group"><input type="password" id="pi" placeholder="Llave de Acceso" onkeypress="handleEnter(event, validarLogin)"></div>
-        <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
+    <div class="grid">
+        <div class="stat-card"><h3>Total Terminales</h3><p id="statTotal">0</p></div>
+        <div class="stat-card stat-warn"><h3>Auditorías Pendientes</h3><p id="statPend">0</p></div>
+        <div class="stat-card stat-success"><h3>Validaciones (Mes)</h3><p id="statRecaudo">0</p></div>
     </div>
 
-    <!-- PANTALLA PRINCIPAL (STATUS) -->
-    <div id="status-section">
-        <div class="panel-header">
-            <div id="display-user" style="font-weight: bold;">Sesión: ---</div>
-            <div>
-                <button onclick="abrirConfiguracion()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px; margin-right: 15px;"><i class="fa-solid fa-gear"></i></button>
-                <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer; font-size: 18px;"><i class="fa-solid fa-power-off"></i></button>
-            </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>TERMINAL / USUARIO</th>
+                    <th>CREDENCIALES (ID / LLAVE)</th>
+                    <th>ESTADO EN PORTAL</th>
+                    <th>VENCIMIENTO</th>
+                    <th style="text-align: right;">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody id="listaNodos"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="main" id="view-pagos" style="display:none;">
+    <div class="header">
+        <h1>Auditoría de Trámites</h1>
+        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Historial</button>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>TERMINAL</th>
+                    <th>TIPO DE SOLICITUD</th>
+                    <th>MÉTODO / REF</th>
+                    <th>COMPROBANTE</th>
+                    <th style="text-align: right;">RESOLUCIÓN</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoPagos"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Registro / Edición -->
+<div id="modalNuevo" class="modal">
+    <div class="modal-content">
+        <h3>Registro / Edición de Terminal</h3>
+        <p style="font-size:11px; color:#888; margin-top:-5px; margin-bottom:15px;">Si el usuario ya existe, se actualizará su llave de acceso y su estado.</p>
+        <input type="text" id="n_user" placeholder="Nombre Usuario (Ej: alcaldia)">
+        <input type="text" id="n_pass" placeholder="Llave Acceso (Dejar vacío para auto-generar)">
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn btn-primary" onclick="crearTerminal()" style="flex:1">Guardar y Sincronizar</button>
+            <button class="btn btn-action" onclick="closeModal('modalNuevo')">Cancelar</button>
         </div>
+    </div>
+</div>
 
-        <div class="panel-body">
-            <div class="main-grid">
-                <div class="card-box" id="status-card-border">
-                    <h4>Estatus del Protocolo</h4>
-                    <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
-                    <p style="text-align: center; font-size: 12px; color: #777;">
-                        Licencia activa hasta: <b id="lbl-vence">---</b>
-                    </p>
-                </div>
+<!-- Modal Generador de Licencia -->
+<div id="modalToken" class="modal">
+    <div class="modal-content">
+        <h3>Aprobar y Generar Licencia</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 10px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
+        
+        <select id="dias_extension">
+            <option value="30">Licencia Mensual (+30 Días)</option>
+            <option value="90">Licencia Trimestral (+90 Días)</option>
+            <option value="365">Licencia Anual (+365 Días)</option>
+        </select>
+        
+        <input type="text" id="semilla" placeholder="Semilla de Seguridad (Ej: SGF2026)">
+        <input type="hidden" id="token_order_id">
+        <input type="hidden" id="token_user_id">
 
-                <div class="card-box">
-                    <h4>Llave de Activación API</h4>
-                    <div class="token-container">
-                        <span id="token-display">---</span>
-                        <button class="btn-copy" onclick="copiarLlave()">
-                            <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
-                        </button>
-                    </div>
-                    <span id="terminal-identidad">ID: ---</span>
-                    <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
-                </div>
-            </div>
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y LIBERAR</button>
+            <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
+        </div>
+    </div>
+</div>
 
-            <!-- AREA DE PAGOS -->
-            <div id="payment-area">
-                <div id="form-inner">
-                    <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
-                    
-                    <div class="tramite-grid">
-                        <button id="btn-tramite-renovar" class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
-                            <i class="fa-solid fa-key"></i>
-                            <span>RENOVAR LICENCIA VENCIDA</span>
-                        </button>
-                        <button id="btn-tramite-actualizar" class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
-                            <i class="fa-solid fa-key"></i>
-                            <span>ACTUALIZAR SERVICIO ACTIVO</span>
-                        </button>
-                    </div>
-                    
-                    <label style="font-size:11px; color:#555; font-weight:bold; margin-bottom: 8px; display:block;">Método de Pago</label>
-                    <div class="pay-methods-grid">
-                        <div class="pay-btn" onclick="seleccionarPago(this, 'banco')"><i class="fa-solid fa-building-columns"></i> Banco</div>
-                        <div class="pay-btn" onclick="seleccionarPago(this, 'binance')"><i class="fa-brands fa-bitcoin"></i> Crypto</div>
-                        <div class="pay-btn" onclick="seleccionarPago(this, 'acuerdo')"><i class="fa-solid fa-handshake"></i> Acuerdo</div>
-                    </div>
-
-                    <div id="pay-details" class="pay-details-box"></div>
-                    <input type="hidden" id="metodo-pago-seleccionado" value="">
-                    <input type="text" id="ref" placeholder="Nro de Referencia / Comprobante" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 5px;" onkeypress="handleEnter(event, enviarOrden)">
-                    
-                    <label class="file-upload">
-                        <input type="file" id="archivo" onchange="document.getElementById('file-name').innerText = this.files[0].name">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> <span id="file-name">Cargar Comprobante Digital</span>
-                    </label>
-
-                    <button class="btn-success" onclick="enviarOrden()">SOLICITAR VALIDACIÓN</button>
-                </div>
-
-                <div id="verifying-display">
-                    <i class="fa-solid fa-cloud-arrow-up fa-bounce" style="font-size: 40px; color: var(--blue-pro); margin-bottom: 15px;"></i>
-                    <h3 style="color:var(--primary); margin:0 0 10px 0;">SGF CLOUD</h3>
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">Su solicitud está siendo verificada por la División de Hacienda. Espere confirmación.</p>
-                </div>
-            </div>
+<!-- Modal Configuración de Llave (Solo Revert) -->
+<div id="modalConfig" class="modal">
+    <div class="modal-content">
+        <h3>Configurar Llave (GitHub)</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token original. El sistema lo invertirá y protegerá en su navegador.</p>
+        <input type="password" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Guardar Token</button>
+            <button class="btn btn-action" onclick="closeModal('modalConfig')">Cancelar</button>
         </div>
     </div>
 </div>
 
 <script>
-    /* =====================================================================
-       CONFIGURACIÓN CENTRAL DE COMUNICACIÓN (API GITHUB)
-       ===================================================================== */
-    const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
-    
-    let currentFileSha = ""; 
-    let sgfConfig = { usuarios: [], ordenes: [], cloud_access: "" };
-    let currentUser = null;
-    let selectedTramite = "";
-    let isLicenseActive = false;
-
-    // Blindaje de Interfaz Anti-Inspección
     document.addEventListener('contextmenu', event => event.preventDefault());
-    const threshold = 160;
-    setInterval(() => {
-        if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
-            document.body.innerHTML = '';
-            document.body.style.backgroundColor = '#000';
-        }
-    }, 1000);
-    window.addEventListener('keydown', (e) => {
-        if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
-            e.preventDefault(); document.body.innerHTML = ''; return false;
-        }
-    });
 
-    // Sistema Toast UI
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+        let icon = type === 'error' ? 'fa-exclamation-triangle' : (type === 'info' ? 'fa-info-circle' : 'fa-check-circle');
         toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
         container.appendChild(toast);
-        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
+        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
     }
 
-    function handleEnter(e, callback) { if (e.key === 'Enter' || e.keyCode === 13) { e.preventDefault(); callback(); } }
+    /* =====================================================================
+       VARIABLES GLOBALES Y MEMORIA
+       ===================================================================== */
+    const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
+    const dbKey = 'sgf_master_db_v27'; 
+    let sgfConfig = { usuarios: [], ordenes: [] };
+    let currentSha = null; // SELLO DE VERSIÓN GLOBAL
+
+    function loadDB() {
+        try {
+            let stored = localStorage.getItem(dbKey);
+            if(stored) sgfConfig = JSON.parse(atob(stored));
+            if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+            if(!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
+        } catch(e) { 
+            sgfConfig = { usuarios: [], ordenes: [] };
+        }
+    }
+
+    function saveDB() {
+        localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
+        renderTable();
+        renderHistorial();
+    }
+
+    function showTab(tab) {
+        document.querySelectorAll('.main').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + tab).style.display = 'block';
+        document.getElementById('nav-' + tab).classList.add('active');
+        renderTable(); renderHistorial();
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       1. ESCUDO DE INVISIBILIDAD Y LECTURA DINÁMICA (CLOUD CHECK)
+       PASO 1: CARGA INICIAL (LECTURA GET) - EL PUENTE DE MANDO
        ===================================================================== */
-    async function fetchRemoteConfig() {
+    async function cargarDatosNube() {
+        const btn = document.getElementById('btn-force-sync');
+        const semillaRevertida = localStorage.getItem('semilla_revert');
+        if (!semillaRevertida) return;
+
+        const realKey = semillaRevertida.split('').reverse().join('');
+        const statusInd = document.getElementById('sync-status');
+        
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.style.color = '#fff';
+
         try {
-            // Intenta conectarse a GitHub y descargar el archivo
-            const response = await fetch(GITHUB_API_URL, { cache: 'no-store' });
+            const response = await fetch(GITHUB_API_URL, {
+                method: "GET",
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+            });
             
             if (response.ok) {
                 const data = await response.json();
-                currentFileSha = data.sha;
+                currentSha = data.sha; // GUARDAMOS EL SHA VIGENTE
                 
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
-                const decodedContent = decodeURIComponent(escape(atob(cleanBase64)));
-                sgfConfig = JSON.parse(decodedContent);
+                const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
                 
-                // DESBLOQUEO DEL ESCUDO: Solo si hay conexión y formato válido
-                document.body.classList.add("unlocked");
-
-                if (!currentUser) {
-                    document.getElementById('login-section').style.display = 'block';
-                } else {
-                    // Actualización en caliente si ya inició sesión
-                    const updatedUser = sgfConfig.usuarios.find(u => (u.user === currentUser.user || u.u === currentUser.u));
-                    if (updatedUser) {
-                        currentUser = updatedUser;
-                        verificarEstadoAuditoria();
-                        procesarLicencia();
-                    } else {
-                        iniciarLogoutSeguro(); // Si el Master lo borró, lo saca
-                    }
-                }
-            } else {
-                // Si la URL falla (No existe el JSON), el cuerpo se queda invisible / en blanco.
-                console.error("No se pudo descargar la configuración de la Nube.");
+                sgfConfig.usuarios = Array.isArray(cloudState.usuarios) ? cloudState.usuarios : [];
+                sgfConfig.ordenes = Array.isArray(cloudState.ordenes) ? cloudState.ordenes : [];
+                
+                saveDB();
+                
+                statusInd.className = 'status-online';
+                statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
             }
-        } catch(e) {
-            console.error("Sin conexión o CORS bloqueado.");
+        } catch (error) {
+            statusInd.className = 'status-offline';
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
         }
+
+        // Restaurar botón
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
     }
 
-    // Polling Automático (El Portal siempre está verificando el estado)
-    fetchRemoteConfig();
-    setInterval(fetchRemoteConfig, 20000);
+    setInterval(cargarDatosNube, 15000);
 
     /* =====================================================================
-       2. MÓDULO DE LOGIN CONTRA LA NUBE
+       PASO 2 y 3: BLINDAJE DEL ENVÍO (ESCRITURA PUT CON SHA Y RESCATE)
        ===================================================================== */
-    function validarLogin() {
-        const user = document.getElementById('ui').value.trim().toLowerCase();
-        const pass = document.getElementById('pi').value.trim();
-
-        // Valida contra el JSON descargado
-        const foundUser = sgfConfig.usuarios.find(usr => (usr.user === user || usr.u === user) && usr.p === pass);
-
-        if (foundUser) {
-            currentUser = foundUser;
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('status-section').style.display = 'block';
-            
-            const nombreMostrar = currentUser.user || currentUser.u;
-            document.getElementById('display-user').innerText = "Terminal: " + nombreMostrar.toUpperCase();
-            
-            procesarLicencia();
-            verificarEstadoAuditoria();
-            showToast(`Conectado al servidor: ${nombreMostrar.toUpperCase()}`, "success");
-        } else {
-            showToast("Acceso Denegado. Credenciales incorrectas.", "error");
-        }
-    }
-
-    /* =====================================================================
-       3. MÓDULO DE LICENCIA Y DECODIFICADOR BASE64
-       ===================================================================== */
-    function procesarLicencia() {
-        if (!currentUser) return;
-        const token = currentUser.t || "";
-        const idMostrar = currentUser.id || `ID-${(currentUser.user || currentUser.u).toUpperCase()}-2026`;
+    async function sincronizarConNube() {
+        const btn = document.getElementById('btn-force-sync');
+        const semillaRevertida = localStorage.getItem('semilla_revert');
         
-        document.getElementById('token-display').innerText = token;
-        document.getElementById('terminal-identidad').innerText = `ID: ${idMostrar}`;
+        if (!semillaRevertida) {
+            alert("Acción Denegada: Falta configurar la Llave GitHub en el menú.");
+            return;
+        }
 
-        const partes = token.split('-');
-        if(partes[0] === "E" && partes.length >= 4) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Escribiendo...';
+        btn.style.backgroundColor = '#f57c00'; 
+        btn.style.color = '#fff';
+
+        const realKey = semillaRevertida.split('').reverse().join('');
+        
+        if (!sgfConfig.usuarios.some(u => (u.user === 'admin' || u.u === 'admin'))) {
+             sgfConfig.usuarios.unshift({ user: 'admin', u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`, estado: "LIBRE" });
+        }
+
+        const payloadToUpload = {
+            cloud_access: semillaRevertida,
+            usuarios: sgfConfig.usuarios,
+            ordenes: sgfConfig.ordenes
+        };
+
+        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
+
+        // RESCATE TÁCTICO: Obtener SHA si está vacío
+        if (!currentSha) {
             try {
-                // Decodifica la fecha oculta en Base64
-                const f = atob(partes[3]);
-                const anio = f.substring(0,4); const mes = f.substring(4,6); const dia = f.substring(6,8);
-                const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
-                const hoy = new Date();
-                const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
-                
-                isLicenseActive = diff > 0;
-
-                const ind = document.getElementById('status-indicator');
-                const border = document.getElementById('status-card-border');
-                document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
-
-                if(isLicenseActive) {
-                    ind.className = "status-pill activo";
-                    ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS RESTANTES)`;
-                    border.style.borderTop = "4px solid var(--accent)";
-                } else {
-                    ind.className = "status-pill vencido";
-                    ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
-                    border.style.borderTop = "4px solid var(--danger)";
-                }
-
-                // Configura botones según licencia
-                const btnRenovar = document.getElementById('btn-tramite-renovar');
-                const btnActualizar = document.getElementById('btn-tramite-actualizar');
-                
-                if (isLicenseActive) {
-                    btnRenovar.setAttribute('disabled', 'true');
-                    btnActualizar.removeAttribute('disabled');
-                } else {
-                    btnActualizar.setAttribute('disabled', 'true');
-                    btnRenovar.removeAttribute('disabled');
+                const getReq = await fetch(GITHUB_API_URL, {
+                    method: "GET",
+                    headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+                });
+                if (getReq.ok) {
+                    const getRes = await getReq.json();
+                    currentSha = getRes.sha;
                 }
             } catch(e) {}
         }
-    }
 
-    /* =====================================================================
-       4. BLOQUEO DE ESTADO (AUDITORÍA)
-       ===================================================================== */
-    function verificarEstadoAuditoria() {
-        if (!currentUser) return;
+        const bodyData = {
+            message: "SGF Master: Sincronización de Base de Datos Central",
+            content: payloadBase64
+        };
         
-        // Bloqueo estricto del Panel de Pagos
-        if (currentUser.estado === "AUDITANDO" || currentUser.estado === "PENDIENTE") {
-            document.getElementById('form-inner').style.display = 'none';
-            document.getElementById('verifying-display').style.display = 'block';
-        } else {
-            document.getElementById('form-inner').style.display = 'block';
-            document.getElementById('verifying-display').style.display = 'none';
-        }
-    }
+        if (currentSha) bodyData.sha = currentSha;
 
-    /* =====================================================================
-       5. ESCRITURA EN GITHUB (REVERT KEY EXTRÍDA DEL JSON)
-       ===================================================================== */
-    async function enviarOrden() {
-        if (!selectedTramite) return showToast("Seleccione el tipo de trámite.", "error");
-        
-        const pago = document.getElementById('metodo-pago-seleccionado').value;
-        if (!pago) return showToast("Seleccione un método de pago.", "error");
-
-        const r = document.getElementById('ref').value.trim();
-        const f = document.getElementById('archivo').files[0];
-        
-        const nombreUser = currentUser.user || currentUser.u;
-        const id = "ORD-" + Math.floor(Math.random()*900000+100000);
-
-        if(!r && pago !== "acuerdo") return showToast("Indique la referencia o comprobante del pago.", "error");
-        
-        // RESTRICCIÓN: El portal depende de que el Master haya dejado la 'cloud_access' en el JSON.
-        if (!sgfConfig.cloud_access || sgfConfig.cloud_access === "") {
-            return showToast("Error de Sistema: El Administrador no habilitó el canal de comunicación.", "error");
-        }
-
-        // Subida de imagen a Cloudinary (Solo si hay archivo)
-        if(f) {
-            showToast("Adjuntando comprobante en la nube...", "info");
-            const fd = new FormData();
-            fd.append('file', f);
-            fd.append('upload_preset', 'ordenes'); 
-            fd.append('public_id', `pago_${id}_${nombreUser}`);
-            try {
-                await fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd });
-            } catch(e) { console.warn("Comprobante omitido por red."); }
-        }
-
-        // Modificamos el estado local del usuario (El portal lo bloquea aquí mismo)
-        const userIndex = sgfConfig.usuarios.findIndex(usr => (usr.user === nombreUser || usr.u === nombreUser));
-        sgfConfig.usuarios[userIndex].estado = "AUDITANDO";
-        
-        if (!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
-        
-        sgfConfig.ordenes.push({
-            id: id,
-            usuario: nombreUser,
-            tramite: selectedTramite,
-            metodo: pago,
-            referencia: r || 'N/A',
-            fecha: new Date().toISOString(),
-            estado: 'Pendiente'
-        });
-
-        // TÉCNICA DE ESPEJO: Toma la llave guardada al revés por el Master, y le da la vuelta
-        const realKey = sgfConfig.cloud_access.split('').reverse().join('');
-        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(sgfConfig, null, 4))));
-
-        showToast("Enviando paquete de datos a la Central...", "info");
-
-        // Disparo Final a GitHub
         try {
             const putReq = await fetch(GITHUB_API_URL, {
                 method: "PUT",
-                headers: {
+                headers: { 
                     "Authorization": "token " + realKey,
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json" 
                 },
-                body: JSON.stringify({
-                    message: `Auditoría solicitada por Terminal: ${nombreUser}`,
-                    content: payloadBase64,
-                    sha: currentFileSha // Requisito de GitHub
-                })
+                body: JSON.stringify(bodyData)
             });
 
-            if (putReq.ok) {
-                showToast("Órden de servicio entregada con éxito.", "success");
-                // Forzamos al portal a leer su propia actualización en 2s para auto-bloquearse
-                setTimeout(() => fetchRemoteConfig(), 2000);
+            if(putReq.ok) {
+                const putRes = await putReq.json();
+                currentSha = putRes.content.sha;
+
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Nube Sincronizada';
+                btn.style.backgroundColor = '#00c853';
+                document.getElementById('sync-status').className = 'status-online';
+                document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
             } else {
-                const errJson = await putReq.json();
-                console.error("Rechazo de API:", errJson);
-                throw new Error("El servidor rechazó la escritura.");
+                const errData = await putReq.json();
+                alert(`Error HTTP ${putReq.status}\nMensaje de GitHub: ${errData.message}`);
+                btn.innerHTML = `<i class="fa-solid fa-xmark"></i> Error ${putReq.status}`;
+                btn.style.backgroundColor = '#d32f2f';
+                currentSha = null; 
             }
-        } catch(err) {
-            showToast("Hubo un error de sincronización al enviar la orden.", "error");
-            // Si falla el envío, le devolvemos el estado LIBRE para que vuelva a intentar
-            sgfConfig.usuarios[userIndex].estado = "LIBRE";
+        } catch (error) {
+            alert(`Fallo de Red o Conexión: ${error.message}`);
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Fallo Red';
+            btn.style.backgroundColor = '#d32f2f';
         }
+
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
+            btn.style.backgroundColor = '';
+        }, 3000);
+    }
+
+
+    /* =====================================================================
+       EL DATA MAPPING (MAPA DE DATOS EXACTO EN LA TABLA)
+       ===================================================================== */
+    function decodificarFecha(token) {
+        if (!token) return null;
+        try { const partes = token.split('-'); if (partes.length >= 4) return atob(partes[3]); } catch(e) {}
+        return null;
+    }
+
+    function renderTable() {
+        const list = document.getElementById('listaNodos');
+        list.innerHTML = "";
+        
+        let arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        let pendingAudits = arrOrdenes.filter(o => o.estado === 'Pendiente').length;
+        let count = 0;
+
+        (sgfConfig.usuarios || []).forEach((usr) => {
+            try {
+                const nombreUser = usr.user || usr.u || "";
+                if(!nombreUser || nombreUser === 'admin') return; 
+                
+                count++;
+                const idUser = usr.id || `ID-${nombreUser.toUpperCase()}-2026`;
+                const passUser = usr.p || '---';
+                const estadoUser = usr.estado || "LIBRE";
+                let vencimientoUser = usr.vencimiento || decodificarFecha(usr.t) || "2026-12-31";
+
+                let portalStatus = (estadoUser === "AUDITANDO" || estadoUser === "PENDIENTE") ? 
+                    `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
+                    (estadoUser === "LIBRE" ? `<span class="status-pill status-active">LIBRE</span>` : `<span class="status-pill badge-normal">${estadoUser}</span>`);
+                
+                let fechaMostrada = vencimientoUser;
+                if(vencimientoUser.length === 8 && !vencimientoUser.includes('-')) {
+                    fechaMostrada = `${vencimientoUser.substring(6,8)}/${vencimientoUser.substring(4,6)}/${vencimientoUser.substring(0,4)}`;
+                }
+
+                list.innerHTML += `
+                    <tr>
+                        <td><b style="color:white; font-size:14px;">${nombreUser.toUpperCase()}</b></td>
+                        <td>
+                            <code style="color:var(--primary); font-size:12px;">${idUser}</code><br>
+                            <code style="color:var(--success); font-size:11px;">Llave: ${passUser}</code>
+                        </td>
+                        <td>${portalStatus}</td>
+                        <td style="color:#aaa;">${fechaMostrada}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-action" onclick="prepararRenovacionManual('${nombreUser}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
+                            <button class="btn btn-danger" onclick="eliminarTerminal('${nombreUser}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            } catch(e) {}
+        });
+
+        document.getElementById('statTotal').innerText = count;
+        document.getElementById('statPend').innerText = pendingAudits;
+        document.getElementById('statRecaudo').innerText = arrOrdenes.filter(o => o.estado === 'Aprobada').length;
+    }
+
+    function renderHistorial() {
+        const cuerpo = document.getElementById('cuerpoPagos');
+        cuerpo.innerHTML = "";
+        
+        let arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        const ordenesInversas = [...arrOrdenes].reverse();
+        
+        ordenesInversas.forEach(p => {
+            try {
+                if(!p || !p.id) return;
+                let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+                let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
+                let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
+                let fechaCorta = p.fecha ? p.fecha.split('T')[0] : '---';
+                
+                cuerpo.innerHTML += `<tr><td style="color:#888;">${fechaCorta}</td><td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo||'---'}</span><br><small>Ref: ${p.referencia||'---'}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+            } catch(e) {}
+        });
     }
 
     /* =====================================================================
-       UTILIDADES DE UI Y PAGOS
+       ACCIONES DE INTERFAZ Y AUTO-GENERADOR DE LLAVES (EDICIÓN)
        ===================================================================== */
-    function seleccionarTramite(btn, tramite) {
-        if (btn.hasAttribute('disabled')) {
-            if (isLicenseActive) showToast("Su licencia está activa. Seleccione 'Actualizar'.", "error");
-            else showToast("Su licencia está vencida. Seleccione 'Renovar'.", "error");
+    function generarLlaveAleatoria() {
+        return Math.random().toString(36).substring(2, 12).toUpperCase(); // 10 caracteres
+    }
+
+    function crearTerminal() {
+        const u = document.getElementById('n_user').value.toLowerCase().trim();
+        let p = document.getElementById('n_pass').value.trim();
+
+        if(!u) return showToast("El ID de usuario es obligatorio.", "error");
+        
+        if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+        
+        // Si no puso clave, la auto-generamos
+        if(!p) p = generarLlaveAleatoria();
+
+        // Verificar si existe para EDITAR
+        const existingIdx = sgfConfig.usuarios.findIndex(usr => (usr.u === u || usr.user === u));
+        
+        if(existingIdx !== -1) {
+            if(confirm(`El terminal [${u}] ya existe.\n¿Desea actualizar su llave de acceso a: ${p} y reiniciar su estado a LIBRE?`)) {
+                sgfConfig.usuarios[existingIdx].p = p;
+                sgfConfig.usuarios[existingIdx].estado = "LIBRE";
+                saveDB(); 
+                document.getElementById('n_user').value = '';
+                document.getElementById('n_pass').value = '';
+                closeModal('modalNuevo');
+                showToast("Terminal actualizado. Sincronizando...", "info");
+                sincronizarConNube();
+            }
             return;
         }
-        document.querySelectorAll('.tramite-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedTramite = tramite;
-    }
 
-    const payData = {
-        'banco': '<b>Transferencia Bancaria Nacional</b><br>Banco de Venezuela (0102)<br>Cuenta: 0102-XXXX-XXXX-XXXX-XXXX<br>RIF: J-XXXXXXXX-X<br>A nombre de: SGF Cloud Services C.A.',
-        'binance': '<b>Binance Pay / USDT (TRC20)</b><br>Red: Tron (TRC20)<br>Wallet: TYPxxxxxxxxxxxxxxxxxxxxxxxxxxxxx99<br>Pay ID: 123456789',
-        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará en el Servicio de Hacienda. Indique un número de autorización o memo en el campo de referencia si aplica.'
-    };
+        // Si es nuevo, lo creamos
+        sgfConfig.usuarios.push({ 
+            user: u, 
+            id: `ID-${u.toUpperCase()}-2026`, 
+            estado: "LIBRE", 
+            vencimiento: "2026-12-31",
+            u: u, 
+            p: p, 
+            t: `E-INIT-${u.toUpperCase()}-${btoa("20261231")}-START` 
+        });
 
-    function seleccionarPago(btn, tipo) {
-        document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('metodo-pago-seleccionado').value = tipo;
-        const detailsBox = document.getElementById('pay-details');
-        detailsBox.innerHTML = payData[tipo];
-        detailsBox.style.display = 'block';
-    }
-
-    function copiarLlave() { navigator.clipboard.writeText(currentUser.t).then(() => showToast("Llave de activación copiada.", "success")); }
-    function abrirConfiguracion() { document.getElementById('force-reset').style.display = 'flex'; }
-    function cerrarConfiguracion() { document.getElementById('force-reset').style.display = 'none'; }
-
-    function iniciarLogoutSeguro() {
-        currentUser = null;
-        document.getElementById('ui').value = "";
-        document.getElementById('pi').value = "";
-        document.getElementById('status-section').style.display = 'none';
-        document.getElementById('login-section').style.display = 'block';
-        showToast("Sesión cerrada correctamente.", "info");
-    }
-
-    function guardarReset() {
-        if (!currentUser) return;
-        const nu = document.getElementById('nu').value.trim();
-        const np = document.getElementById('np').value.trim();
-        if (nu.length < 4) return showToast("El usuario debe tener al menos 4 caracteres.", "error");
+        saveDB(); 
+        document.getElementById('n_user').value = '';
+        document.getElementById('n_pass').value = '';
+        closeModal('modalNuevo'); 
         
-        const nombreUser = currentUser.user || currentUser.u;
-        const userIndex = sgfConfig.usuarios.findIndex(usr => (usr.user === nombreUser || usr.u === nombreUser));
-        
-        if (userIndex !== -1) {
-            sgfConfig.usuarios[userIndex].user = nu;
-            sgfConfig.usuarios[userIndex].u = nu; // Fallback
-            sgfConfig.usuarios[userIndex].p = np;
-            
-            const realKey = sgfConfig.cloud_access.split('').reverse().join('');
-            const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(sgfConfig, null, 4))));
-            
-            fetch(GITHUB_API_URL, {
-                method: "PUT",
-                headers: { "Authorization": "token " + realKey, "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "SGF Cloud: Cambio de Credenciales de Cliente", content: payloadBase64, sha: currentFileSha })
-            }).then(() => {
-                showToast("Credenciales actualizadas exitosamente.", "success");
-                setTimeout(() => location.reload(), 1500);
-            }).catch(() => showToast("Error guardando nuevas credenciales.", "error"));
+        showToast("Guardado local. Sincronizando con GitHub...", "info");
+        sincronizarConNube(); 
+    }
+
+    function eliminarTerminal(userName) {
+        if(confirm(`¿ELIMINAR a [${userName}] de la Nube?`)) {
+            sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== userName && u.user !== userName);
+            saveDB(); sincronizarConNube();
         }
     }
+
+    function limpiarHistorial() {
+        if(confirm("¿Vaciar registro de transacciones?")) {
+            sgfConfig.ordenes = [];
+            saveDB(); sincronizarConNube();
+        }
+    }
+
+    // RESET DE EMERGENCIA
+    function resetCache() {
+        if(confirm("¿Estás seguro de borrar la memoria caché interna del Master?\nEsto obligará al sistema a descargar la base de datos fresca desde GitHub. Úsalo si ves datos duplicados o errores raros.")) {
+            localStorage.removeItem(dbKey);
+            currentSha = null;
+            location.reload();
+        }
+    }
+
+    function abrirAprobacion(orderId, userName) {
+        document.getElementById('lbl-token-user').innerText = userName.toUpperCase();
+        document.getElementById('token_order_id').value = orderId;
+        document.getElementById('token_user_id').value = userName;
+        openModal('modalToken');
+    }
+
+    function prepararRenovacionManual(userName) { abrirAprobacion("MANUAL", userName); }
+
+    function aprobarYEnviar() {
+        const userId = document.getElementById('token_user_id').value;
+        const orderId = document.getElementById('token_order_id').value;
+        const dias = parseInt(document.getElementById('dias_extension').value);
+        let semilla = document.getElementById('semilla').value || "SGF2026";
+
+        const usrIdx = sgfConfig.usuarios.findIndex(u => (u.u === userId || u.user === userId));
+        if(usrIdx === -1) return;
+
+        let d = new Date(); d.setDate(d.getDate() + dias);
+        let year = d.getFullYear();
+        let month = String(d.getMonth()+1).padStart(2,'0');
+        let day = String(d.getDate()).padStart(2,'0');
+        
+        let fechaB64 = btoa(`${year}${month}${day}`); 
+        let fechaLegible = `${year}-${month}-${day}`;
+        
+        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
+        sgfConfig.usuarios[usrIdx].vencimiento = fechaLegible;
+        sgfConfig.usuarios[usrIdx].t = `E-${Math.random().toString(36).substring(2,6).toUpperCase()}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
+
+        if (orderId !== "MANUAL") {
+            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
+            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
+        }
+        
+        saveDB(); closeModal('modalToken');
+        sincronizarConNube(); 
+    }
+
+    function abrirConfigCanal() {
+        const semillaActual = localStorage.getItem('semilla_revert');
+        if(semillaActual) {
+            document.getElementById('cfg_token').value = semillaActual.split('').reverse().join('');
+        } else {
+            document.getElementById('cfg_token').value = '';
+        }
+        openModal('modalConfig');
+    }
+
+    function guardarConfigCanal() {
+        const token = document.getElementById('cfg_token').value.trim();
+        if(!token) return showToast("Ingrese el Token.", "error");
+
+        const semillaRevertida = token.split('').reverse().join('');
+        localStorage.setItem('semilla_revert', semillaRevertida);
+        
+        closeModal('modalConfig');
+        showToast("Llave guardada. Inicializando...", "success");
+        cargarDatosNube(); 
+    }
+
+    // Inicialización de Arranque
+    loadDB(); 
+    showTab('clientes');
+    cargarDatosNube();
 </script>
 </body>
 </html>
