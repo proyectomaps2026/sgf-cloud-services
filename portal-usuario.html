@@ -323,7 +323,7 @@
     }
 
     /* =====================================================================
-       3. NUEVO MÓDULO DE LICENCIA Y DECODIFICADOR (SGF PRO)
+       3. MÓDULO DE LICENCIA Y DECODIFICADOR CORREGIDO (SGF PRO)
        ===================================================================== */
     function procesarLicencia() {
         if (!currentUser) return;
@@ -335,59 +335,68 @@
 
         const partes = token.split('-');
         
-        // Verifica si es la Nueva Licencia Encriptada: SGF-XXXX-[BASE64]
-        if (partes[0] === "SGF" && partes.length >= 3) {
+        // Verifica la estructura del Master: SGF - XXXX - TOKEN_REVERTIDO - FECHA_BASE64
+        if (partes[0] === "SGF" && partes.length >= 4) {
             try {
-                const encryptedFinal = partes.slice(2).join('-');
-                const decodedPayload = atob(encryptedFinal); // Extrae "TOKEN_REVERT|FECHA_BASE64"
-                const payloadParts = decodedPayload.split('|');
+                // Obtenemos la última parte, que es la fecha codificada
+                let fechaCodificada = partes[3];
                 
-                if (payloadParts.length === 2) {
-                    const tokenRevertido = payloadParts[0];
-                    const fechaCodificada = payloadParts[1];
-                    
-                    // Decodifica la fecha exacta
-                    const fechaSTR = atob(fechaCodificada); // YYYY-MM-DD
-                    const vDate = new Date(`${fechaSTR}T00:00:00`);
-                    const hoy = new Date();
-                    const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
-                    
-                    isLicenseActive = diff > 0;
-
-                    const ind = document.getElementById('status-indicator');
-                    const border = document.getElementById('status-card-border');
-                    
-                    // Formatea YYYY-MM-DD a DD/MM/YYYY para la UI
-                    const [anio, mes, dia] = fechaSTR.split('-');
-                    document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
-
-                    if (isLicenseActive) {
-                        ind.className = "status-pill activo";
-                        ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS RESTANTES)`;
-                        border.style.borderTop = "4px solid var(--accent)";
-                    } else {
-                        ind.className = "status-pill vencido";
-                        ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
-                        border.style.borderTop = "4px solid var(--danger)";
-                    }
-
-                    // Configura botones según licencia
-                    const btnRenovar = document.getElementById('btn-tramite-renovar');
-                    const btnActualizar = document.getElementById('btn-tramite-actualizar');
-                    
-                    if (isLicenseActive) {
-                        btnRenovar.setAttribute('disabled', 'true');
-                        btnActualizar.removeAttribute('disabled');
-                    } else {
-                        btnActualizar.setAttribute('disabled', 'true');
-                        btnRenovar.removeAttribute('disabled');
-                    }
+                // RESTAURAR PADDING BASE64: Los navegadores exigen que sea múltiplo de 4
+                while (fechaCodificada.length % 4 !== 0) {
+                    fechaCodificada += '=';
                 }
+                
+                // Decodifica la fecha exacta (Ej: 2024-12-31)
+                const fechaSTR = atob(fechaCodificada); 
+                
+                // Verificación de seguridad: ¿Es realmente una fecha?
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaSTR)) {
+                    throw new Error("La cadena extraída no es una fecha válida.");
+                }
+
+                const vDate = new Date(`${fechaSTR}T00:00:00`);
+                const hoy = new Date();
+                const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
+                
+                isLicenseActive = diff > 0;
+
+                const ind = document.getElementById('status-indicator');
+                const border = document.getElementById('status-card-border');
+                
+                // Formatea YYYY-MM-DD a DD/MM/YYYY para la UI
+                const [anio, mes, dia] = fechaSTR.split('-');
+                document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
+
+                if (isLicenseActive) {
+                    ind.className = "status-pill activo";
+                    ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS RESTANTES)`;
+                    border.style.borderTop = "4px solid var(--accent)";
+                } else {
+                    ind.className = "status-pill vencido";
+                    ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
+                    border.style.borderTop = "4px solid var(--danger)";
+                }
+
+                // Configura botones según licencia
+                const btnRenovar = document.getElementById('btn-tramite-renovar');
+                const btnActualizar = document.getElementById('btn-tramite-actualizar');
+                
+                if (isLicenseActive) {
+                    btnRenovar.setAttribute('disabled', 'true');
+                    btnActualizar.removeAttribute('disabled');
+                } else {
+                    btnActualizar.setAttribute('disabled', 'true');
+                    btnRenovar.removeAttribute('disabled');
+                }
+
             } catch (e) {
                 console.error("Error al desencriptar la licencia:", e);
                 isLicenseActive = false;
                 document.getElementById('status-indicator').className = "status-pill vencido";
                 document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><br>LICENCIA INVÁLIDA O CORRUPTA';
+                document.getElementById('lbl-vence').innerText = `---`;
+                document.getElementById('btn-tramite-actualizar').setAttribute('disabled', 'true');
+                document.getElementById('btn-tramite-renovar').removeAttribute('disabled');
             }
         } else {
             // Licencia no reconocida o requiere renovación manual
