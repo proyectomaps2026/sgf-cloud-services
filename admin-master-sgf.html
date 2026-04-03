@@ -3,82 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER | CONTROL REMOTO INTEGRAL</title>
+    <!-- 6. Identidad Visual -->
+    <title>SGF MASTER | Central de Validación de Datos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00ff41; --warning: #ffcc00; --danger: #ff3333; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
+        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; }
+        body { font-family: 'Segoe UI', Inter, sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
         
         /* Sidebar */
-        .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #333; padding: 20px; position: fixed; }
-        .logo { font-size: 20px; font-weight: bold; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
-        .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #aaa; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #222; padding: 20px; position: fixed; box-sizing: border-box;}
+        .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
+        .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
 
         /* Main Content */
-        .main { margin-left: 280px; padding: 40px; width: calc(100% - 320px); }
+        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
         
         /* Stats */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        .stat-card h3 { margin: 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #222; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
+        .stat-card.stat-warn::before { background: var(--warning); }
+        .stat-card.stat-success::before { background: var(--success); }
+        .stat-card h3 { margin: 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
         .stat-card p { font-size: 28px; margin: 10px 0 0 0; font-weight: bold; }
 
         /* Table Design */
-        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #333; overflow: hidden; }
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #222; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #1e1e22; padding: 15px; text-align: left; font-size: 11px; color: #888; text-transform: uppercase; }
-        td { padding: 15px; border-top: 1px solid #333; font-size: 13px; }
+        th { background: #111; padding: 18px 20px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222; }
+        td { padding: 18px 20px; border-bottom: 1px solid #222; font-size: 13px; vertical-align: middle; }
+        tr:hover td { background: #1a1a1f; }
         
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-        .status-active { background: rgba(0, 255, 65, 0.1); color: var(--success); }
-        .status-waiting { background: rgba(255, 204, 0, 0.1); color: var(--warning); }
-        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); }
+        .status-pill { padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-active { background: rgba(0, 200, 83, 0.1); color: var(--success); border: 1px solid rgba(0, 200, 83, 0.2); }
+        .status-waiting { background: rgba(255, 204, 0, 0.1); color: var(--warning); border: 1px solid rgba(255, 204, 0, 0.2); }
+        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.2); }
+        
+        /* 1. Trámites Específicos - Badges */
+        .badge-urgente { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.3); }
+        .badge-normal { background: rgba(25, 118, 210, 0.1); color: var(--blue-pro); border: 1px solid rgba(25, 118, 210, 0.3); }
 
         /* Actions */
         .btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-action { background: #1e1e22; color: #ccc; border: 1px solid #333; margin-right: 5px; }
-        .btn-action:hover { border-color: var(--primary); color: white; }
+        .btn-primary:hover { background: #0050d0; }
+        .btn-action { background: #111; color: #ccc; border: 1px solid #333; margin-right: 5px; }
+        .btn-action:hover { border-color: var(--primary); color: white; background: #1a1a1f; }
+        .btn-danger-outline { background: rgba(255,51,51,0.05); color: var(--danger); border: 1px solid rgba(255,51,51,0.3); margin-right: 5px;}
+        .btn-danger-outline:hover { background: var(--danger); color: white; }
         
         /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card); padding: 30px; border-radius: 20px; width: 420px; border: 1px solid #444; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
+        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .modal-content h3 { margin-top: 0; color: white; font-size: 18px; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
+        input:focus, select:focus { border-color: var(--primary); }
 
-        .token-box { background: #000; color: var(--success); padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; border: 1px dashed #333; margin: 15px 0; word-break: break-all; }
+        /* 5. Notificaciones Toast */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; }
+        .toast-success { background: var(--success); color: #000; }
+        .toast-error { background: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* 3. Visor de Comprobantes (Hover) */
+        .img-container { position: relative; display: inline-block; }
+        .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
+        .img-container:hover .img-thumb { border-color: var(--primary); }
+        .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); right: 60px; top: -150px; background: #111; }
+        .img-container:hover .img-preview { display: block; }
     </style>
 </head>
 <body>
 
+<div id="toast-container"></div>
+
 <div class="sidebar">
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
-    <div class="nav-item active" onclick="showTab('clientes')"><i class="fa-solid fa-city"></i> Gestión de Alcaldías</div>
-    <div class="nav-item" onclick="showTab('pagos')"><i class="fa-solid fa-receipt"></i> Auditoría de Pagos</div>
+    <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
+    <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
 </div>
 
 <div class="main" id="view-clientes">
     <div class="header">
-        <h1>Nodos Fiscales Remotos</h1>
-        <button class="btn btn-primary" onclick="openModal('modalNuevo')"><i class="fa-solid fa-plus"></i> Registrar Nodo</button>
+        <h1>Terminales de Datos</h1>
+        <button class="btn btn-primary" onclick="openModal('modalNuevo')"><i class="fa-solid fa-plus"></i> Registrar Terminal</button>
     </div>
 
     <div class="grid">
-        <div class="stat-card"><h3>Total Nodos</h3><p id="statTotal">0</p></div>
-        <div class="stat-card"><h3>En Espera</h3><p id="statPend" style="color:var(--warning)">0</p></div>
+        <div class="stat-card"><h3>Total Terminales</h3><p id="statTotal">0</p></div>
+        <div class="stat-card stat-warn"><h3>Auditorías Pendientes</h3><p id="statPend">0</p></div>
+        <!-- 6. Total de Recaudación (Estimado Interno) -->
+        <div class="stat-card stat-success"><h3>Validaciones (Mes)</h3><p id="statRecaudo">0</p></div>
     </div>
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>MUNICIPIO / ACCESO</th>
-                    <th>ID NODO</th>
-                    <th>LICENCIA HASTA</th>
-                    <th>ESTADO</th>
-                    <th>CONTROL MAESTRO</th>
+                    <th>USUARIO / NODO</th>
+                    <th>ID TERMINAL</th>
+                    <th>ESTADO EN PORTAL</th>
+                    <th>VENCIMIENTO</th>
+                    <th style="text-align: right;">CONTROL DE SEGURIDAD</th>
                 </tr>
             </thead>
             <tbody id="listaNodos"></tbody>
@@ -87,162 +117,295 @@
 </div>
 
 <div class="main" id="view-pagos" style="display:none;">
-    <div class="header"><h1>Historial de Transacciones</h1></div>
+    <div class="header">
+        <h1>Auditoría de Trámites</h1>
+    </div>
     <div class="table-container">
-        <table id="tablaHistorial">
-            <thead><tr><th>FECHA</th><th>NODO</th><th>REFERENCIA</th><th>MÉTODO</th><th>CAPTURE</th></tr></thead>
+        <table>
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>TERMINAL</th>
+                    <!-- 1. Recepción de Trámites Específicos -->
+                    <th>TIPO DE SOLICITUD</th>
+                    <th>MÉTODO / REF</th>
+                    <th>COMPROBANTE</th>
+                    <th style="text-align: right;">RESOLUCIÓN</th>
+                </tr>
+            </thead>
             <tbody id="cuerpoPagos"></tbody>
         </table>
     </div>
 </div>
 
+<!-- Modal Registro -->
 <div id="modalNuevo" class="modal">
     <div class="modal-content">
-        <h3>Alta de Nuevo Nodo</h3>
-        <input type="text" id="n_muni" placeholder="Nombre Municipio (Ej: Michelena)">
-        <input type="text" id="n_user" placeholder="Usuario Base (Default: admin)" value="admin">
-        <input type="text" id="n_pass" placeholder="Clave Base (Default: admin)" value="admin">
-        <input type="text" id="n_nodo" placeholder="ID Nodo (Ej: MICH-01)">
-        <div style="display:flex; gap:10px; margin-top:15px;">
+        <h3>Alta de Nuevo Terminal</h3>
+        <input type="text" id="n_user" placeholder="Usuario ID (Ej: alcaldia)">
+        <input type="text" id="n_pass" placeholder="Clave Base" value="admin">
+        <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn btn-primary" onclick="crearNodo()" style="flex:1">Crear Acceso</button>
-            <button class="btn btn-action" onclick="closeModal('modalNuevo')">Cerrar</button>
+            <button class="btn btn-action" onclick="closeModal('modalNuevo')">Cancelar</button>
         </div>
     </div>
 </div>
 
+<!-- 2. Modal Generador Automatizado -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
-        <h3>Generador de Licencia v2.0</h3>
-        <p style="font-size:11px; color:#888;">Este proceso inyectará una fecha de vencimiento (+30 días) en el token encriptado.</p>
-        <input type="text" id="semilla" placeholder="Semilla de Seguridad (Ej: TACHIRA2026)">
-        <div id="tokenResult" class="token-box" style="display:none;"></div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn btn-primary" id="btnActivar" onclick="activarNodoRemoto()" style="flex:1">Inyectar Licencia</button>
+        <h3>Aprobar y Generar Licencia</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 20px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
+        
+        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Extensión de Servicio</label>
+        <select id="dias_extension">
+            <option value="30">Licencia Mensual (+30 Días)</option>
+            <option value="90">Licencia Trimestral (+90 Días)</option>
+            <option value="365">Licencia Anual (+365 Días)</option>
+        </select>
+
+        <input type="hidden" id="token_order_id">
+        <input type="hidden" id="token_user_id">
+
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y ENVIAR</button>
             <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
         </div>
     </div>
 </div>
 
 <script>
-    // BASE DE DATOS LOCAL (Se sincroniza con config.js en producción)
-    let nodosDB = JSON.parse(localStorage.getItem('sgf_master_nodos') || '[]');
-    let currentIdx = null;
+    // 5. Notificaciones Toast (Reemplazo de Alerts)
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideIn 0.3s ease reverse forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // BASE DE DATOS COMPARTIDA (Sincronización con el Portal Local)
+    const dbKey = 'sgf_cloud_db_v12';
+    let sgfConfig = { usuarios: [], ordenes: [] };
+
+    function loadDB() {
+        try {
+            let stored = localStorage.getItem(dbKey);
+            if(stored) sgfConfig = JSON.parse(atob(stored));
+        } catch(e) { console.error("Error DB"); }
+    }
+
+    function saveDB() {
+        localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
+        loadDB();
+        renderNodos();
+        renderHistorial();
+    }
 
     function showTab(tab) {
         document.getElementById('view-clientes').style.display = tab === 'clientes' ? 'block' : 'none';
         document.getElementById('view-pagos').style.display = tab === 'pagos' ? 'block' : 'none';
+        
+        document.getElementById('nav-clientes').classList.remove('active');
+        document.getElementById('nav-pagos').classList.remove('active');
+        document.getElementById('nav-'+tab).classList.add('active');
+        
+        loadDB();
         if(tab === 'pagos') renderHistorial();
+        else renderNodos();
     }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // 1. CREACIÓN DE NODO (AUTONOMÍA Y RESET)
-    function crearNodo() {
-        const nodo = {
-            municipio: document.getElementById('n_muni').value,
-            user: document.getElementById('n_user').value,
-            pass: document.getElementById('n_pass').value, // El admin la crea, ellos la cambian
-            id_nodo: document.getElementById('n_nodo').value,
-            vence: 'PENDIENTE',
-            token: '---',
-            status: 'status-expired',
-            statusTxt: 'INACTIVO'
-        };
-        nodosDB.push(nodo);
-        save();
-        closeModal('modalNuevo');
-        alert("Nodo Creado. Usuario: " + nodo.user + " | Clave: " + nodo.pass);
+    function calcularEstado(token) {
+        if(!token || token === "---") return { class: 'status-expired', txt: 'S/ LICENCIA' };
+        const partes = token.split('-');
+        if(partes.length < 4) return { class: 'status-expired', txt: 'ERROR TKN' };
+        
+        const f = partes[3];
+        const anio = f.substring(0,4); const mes = f.substring(4,6); const dia = f.substring(6,8);
+        const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
+        const diff = Math.ceil((vDate - new Date()) / (1000 * 60 * 60 * 24));
+        
+        if(diff > 0) return { class: 'status-active', txt: `ACTIVO (${diff} D)` };
+        return { class: 'status-expired', txt: 'VENCIDO' };
     }
 
-    // 2. RESETEO DE CLAVE (EL PODER DEL MASTER)
-    function resetPassword(idx) {
-        const nuevaClave = prompt("Ingrese la nueva clave para " + nodosDB[idx].municipio, "admin");
-        if(nuevaClave) {
-            nodosDB[idx].pass = nuevaClave;
-            save();
-            alert("Clave reseteada exitosamente para el portal del usuario.");
-        }
-    }
-
-    // 3. GENERADOR DE TOKEN CON FECHA INYECTADA
-    function prepararToken(idx) {
-        currentIdx = idx;
-        document.getElementById('tokenResult').style.display = 'none';
-        document.getElementById('semilla').value = "";
-        openModal('modalToken');
-    }
-
-    function activarNodoRemoto() {
-        const semilla = document.getElementById('semilla').value;
-        if(!semilla) return alert("Inserte semilla");
-
-        // CÁLCULO DE FECHA +30 DÍAS
-        const d = new Date();
-        d.setDate(d.getDate() + 30);
-        const fechaInyectada = d.toISOString().split('T')[0].replace(/-/g, ""); // Formato 20260502
-
-        // ESTRUCTURA DEL TOKEN: E-BASURA-NODO-FECHA-SEMILLA
-        const basura = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const tokenFinal = `E-${basura}-${nodosDB[currentIdx].id_nodo}-${fechaInyectada}-${semilla.toUpperCase()}`;
-
-        // Actualizar Registro
-        nodosDB[currentIdx].vence = d.toLocaleDateString();
-        nodosDB[currentIdx].token = tokenFinal;
-        nodosDB[currentIdx].status = 'status-active';
-        nodosDB[currentIdx].statusTxt = 'ACTIVO';
-
-        document.getElementById('tokenResult').innerText = tokenFinal;
-        document.getElementById('tokenResult').style.display = 'block';
-
-        save();
-        alert("Licencia extendida. El token ahora viaja con fecha de vencimiento: " + d.toLocaleDateString());
+    function formatearFecha(token) {
+        if(!token || token.split('-').length < 4) return '---';
+        const f = token.split('-')[3];
+        return `${f.substring(6,8)}/${f.substring(4,6)}/${f.substring(0,4)}`;
     }
 
     function renderNodos() {
         const list = document.getElementById('listaNodos');
         list.innerHTML = "";
-        nodosDB.forEach((n, i) => {
+        let pendingAudits = 0;
+
+        sgfConfig.usuarios.forEach((u, i) => {
+            if(u.u === 'admin') return; // Ocultar root
+            
+            const estadoTkn = calcularEstado(u.t);
+            let portalStatus = u.estado === "PENDIENTE" ? 
+                `<span class="status-pill status-waiting">AUDITANDO...</span>` : 
+                `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
+            
+            if(u.estado === "PENDIENTE") pendingAudits++;
+
             list.innerHTML += `
                 <tr>
-                    <td><b>${n.municipio}</b><br><small style="color:#555">User: ${n.user}</small></td>
-                    <td><code style="color:var(--primary)">${n.id_nodo}</code></td>
-                    <td>${n.vence}</td>
-                    <td><span class="status-pill ${n.status}">${n.statusTxt}</span></td>
-                    <td>
-                        <button class="btn btn-action" onclick="prepararToken(${i})" title="Generar Licencia"><i class="fa-solid fa-key" style="color:var(--success)"></i></button>
-                        <button class="btn btn-action" onclick="resetPassword(${i})" title="Resetear Clave"><i class="fa-solid fa-rotate"></i></button>
+                    <td><b style="color:white; font-size:14px;">${u.u.toUpperCase()}</b></td>
+                    <td><code style="color:var(--primary); font-size:12px;">ID-${u.u.toUpperCase()}-2026</code></td>
+                    <td>${portalStatus}</td>
+                    <td style="color:#aaa;">${formatearFecha(u.t)}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia Manual"><i class="fa-solid fa-key"></i></button>
+                        <!-- 4. Gestión de Usuarios y Reset Remoto -->
+                        <button class="btn btn-danger-outline" onclick="forzarReset('${u.u}')" title="Forzar Reset de Seguridad"><i class="fa-solid fa-user-lock"></i> FORZAR RESET</button>
                     </td>
                 </tr>
             `;
         });
-        document.getElementById('statTotal').innerText = nodosDB.length;
+
+        document.getElementById('statTotal').innerText = sgfConfig.usuarios.length > 0 ? sgfConfig.usuarios.length - 1 : 0;
+        document.getElementById('statPend').innerText = pendingAudits;
+        
+        const aprobadas = sgfConfig.ordenes.filter(o => o.estado === 'Aprobada').length;
+        document.getElementById('statRecaudo').innerText = aprobadas;
     }
 
     function renderHistorial() {
-        const bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
         const cuerpo = document.getElementById('cuerpoPagos');
         cuerpo.innerHTML = "";
-        bandeja.reverse().forEach(p => {
+        
+        const ordenesInversas = [...sgfConfig.ordenes].reverse();
+
+        ordenesInversas.forEach(p => {
+            // 1. Trámites Específicos
+            let badgeTramite = p.tramite.includes("Vencida") ? 'badge-urgente' : 'badge-normal';
+            
+            // 3. Visor de Comprobantes (Hover)
+            // Asumiendo formato de Cloudinary desde el portal
+            let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+            let thumbHTML = `
+                <div class="img-container">
+                    <img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=NO+IMG'">
+                    <img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'">
+                </div>
+            `;
+
+            let actionBtn = p.estado === 'Pendiente' ? 
+                `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` :
+                `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
+
+            let dateObj = new Date(p.fecha);
+            let dateStr = `${dateObj.getDate().toString().padStart(2,'0')}/${(dateObj.getMonth()+1).toString().padStart(2,'0')} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+
             cuerpo.innerHTML += `
                 <tr>
-                    <td>${new Date().toLocaleDateString()}</td>
-                    <td>${p.id}</td>
-                    <td>${p.referencia}</td>
-                    <td>${p.metodo}</td>
-                    <td><a href="https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}.jpg" target="_blank" style="color:var(--primary)">Ver Pago</a></td>
+                    <td style="color:#888;">${dateStr}</td>
+                    <td><b style="color:white;">${p.usuario.toUpperCase()}</b><br><small style="color:#666;">${p.id}</small></td>
+                    <td><span class="status-pill ${badgeTramite}">${p.tramite}</span></td>
+                    <td><span style="color:var(--primary); font-weight:bold;">${p.metodo}</span><br><small style="color:#aaa;">Ref: ${p.referencia}</small></td>
+                    <td>${thumbHTML}</td>
+                    <td style="text-align: right;">${actionBtn}</td>
                 </tr>
             `;
         });
     }
 
-    function save() {
-        localStorage.setItem('sgf_master_nodos', JSON.stringify(nodosDB));
-        renderNodos();
-        // NOTA: Aquí dispararías la función de sincronización con GitHub para actualizar el config.js
+    // 4. Forzar Reset de Seguridad
+    function forzarReset(user) {
+        if(confirm(`¿Está seguro de forzar el reset para el terminal [${user}]? La cuenta volverá a admin/admin.`)) {
+            const idx = sgfConfig.usuarios.findIndex(u => u.u === user);
+            if(idx !== -1) {
+                sgfConfig.usuarios[idx].p = 'admin'; // Resetea la clave a admin
+                saveDB();
+                showToast(`Reset de seguridad aplicado al terminal ${user}.`, 'success');
+            }
+        }
     }
 
-    renderNodos();
+    // 2. Generador Automatizado (Aprobación)
+    function abrirAprobacion(orderId, userId) {
+        document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
+        document.getElementById('token_order_id').value = orderId;
+        document.getElementById('token_user_id').value = userId;
+        openModal('modalToken');
+    }
+
+    function prepararRenovacionManual(userId) {
+        document.getElementById('lbl-token-user').innerText = userId.toUpperCase() + " (MANUAL)";
+        document.getElementById('token_order_id').value = "MANUAL";
+        document.getElementById('token_user_id').value = userId;
+        openModal('modalToken');
+    }
+
+    function aprobarYEnviar() {
+        const userId = document.getElementById('token_user_id').value;
+        const orderId = document.getElementById('token_order_id').value;
+        const dias = parseInt(document.getElementById('dias_extension').value);
+
+        const usrIdx = sgfConfig.usuarios.findIndex(u => u.u === userId);
+        if(usrIdx === -1) return showToast("Usuario no encontrado", "error");
+
+        // Lógica de Token Automático
+        let d = new Date();
+        d.setDate(d.getDate() + dias);
+        let anio = d.getFullYear();
+        let mes = String(d.getMonth() + 1).padStart(2, '0');
+        let dia = String(d.getDate()).padStart(2, '0');
+        let fechaExt = `${anio}${mes}${dia}`;
+        
+        let basura = Math.random().toString(36).substring(2, 6).toUpperCase();
+        let nuevoToken = `E-${basura}-${userId.toUpperCase()}-${fechaExt}`;
+
+        // Inyectar en Base de Datos
+        sgfConfig.usuarios[usrIdx].t = nuevoToken;
+        sgfConfig.usuarios[usrIdx].estado = "LIBRE"; // Libera el bloqueo de pantalla del portal
+
+        // Actualizar la orden
+        if (orderId !== "MANUAL") {
+            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
+            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
+        }
+
+        saveDB();
+        closeModal('modalToken');
+        showToast(`Licencia generada. Servicio liberado para ${userId.toUpperCase()}.`, "success");
+    }
+
+    // Alta Manual de Terminal
+    function crearNodo() {
+        const u = document.getElementById('n_user').value.toLowerCase();
+        const p = document.getElementById('n_pass').value;
+        if(!u) return showToast("Ingrese un usuario", "error");
+
+        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("El usuario ya existe", "error");
+
+        sgfConfig.usuarios.push({
+            u: u,
+            p: p,
+            t: `E-NEW-${u.toUpperCase()}-20200101`,
+            estado: "LIBRE",
+            token_orden: ""
+        });
+        
+        saveDB();
+        closeModal('modalNuevo');
+        showToast("Terminal registrado exitosamente", "success");
+    }
+
+    // Inicializar
+    loadDB();
+    showTab('clientes');
+
 </script>
 </body>
 </html>
