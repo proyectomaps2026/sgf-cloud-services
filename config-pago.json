@@ -12,6 +12,12 @@
             "p": "admin",
             "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
             "estado": "LIBRE"
+        },
+        {
+            "u": "admin",
+            "p": "admin",
+            "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
+            "estado": "LIBRE"
         }
     ],
     "ordenes": []
