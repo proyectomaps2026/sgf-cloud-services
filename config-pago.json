@@ -4,7 +4,7 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "AUDITANDO",
+            "estado": "LIBRE",
             "vencimiento": "2026-07-02",
             "u": "alcaldia",
             "p": "admin",
