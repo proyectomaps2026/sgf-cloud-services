@@ -274,13 +274,14 @@
         if (!sgfConfig.api_url || !sgfConfig.cloud_access) return;
 
         const realKey = sgfConfig.cloud_access.split('').reverse().join('');
+        const apiUrlClean = sgfConfig.api_url.trim();
         const statusInd = document.getElementById('sync-status');
         
         try {
-            const response = await fetch(sgfConfig.api_url, {
+            const response = await fetch(apiUrlClean, {
                 method: "GET",
                 headers: { 
-                    "Authorization": `Bearer ${realKey}`, 
+                    "Authorization": `token ${realKey}`, 
                     "Accept": "application/vnd.github.v3+json",
                     "Cache-Control": "no-cache" 
                 }
@@ -302,10 +303,11 @@
                 statusInd.className = 'status-warning';
                 statusInd.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Archivo Nuevo (Listo para Push)';
             } else {
+                const errData = await response.json();
+                console.error("GET Error:", errData);
                 throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
-            console.error("Fallo de lectura", error);
             statusInd.className = 'status-offline';
             statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
         }
@@ -313,7 +315,7 @@
 
     setInterval(syncDataFromRemote, 15000);
 
-    // 2. ESCRITURA FORZADA Y CONTROLADA (GET para SHA -> PUT para Escribir)
+    // 2. ESCRITURA FORZADA (DETECTIVE DE ERRORES: GET -> PUT)
     async function syncDataToRemote(silent = false) {
         if (!sgfConfig.api_url || !sgfConfig.cloud_access) {
             if(!silent) showToast("Canal no configurado. Vaya a Configuración de Canal.", "warning");
@@ -322,8 +324,8 @@
 
         if(!silent) showToast("Procesando actualización en GitHub...", "info");
         const realKey = sgfConfig.cloud_access.split('').reverse().join('');
+        const apiUrlClean = sgfConfig.api_url.trim();
         
-        // Garantizar ROOT
         if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
              sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
@@ -334,16 +336,15 @@
             ordenes: sgfConfig.ordenes
         };
 
-        // Codificación segura Base64 para caracteres latinos
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
         try {
-            // PASO 1: Hacemos GET para obtener el SHA obligatoriamente antes del PUT
-            let currentSha = null;
-            const getReq = await fetch(sgfConfig.api_url, {
+            // PASO 1: Detective - Obtener SHA antes de escribir
+            let actualSha = null;
+            const getReq = await fetch(apiUrlClean, {
                 method: "GET",
                 headers: { 
-                    "Authorization": `Bearer ${realKey}`, 
+                    "Authorization": `token ${realKey}`, 
                     "Accept": "application/vnd.github.v3+json",
                     "Cache-Control": "no-cache"
                 }
@@ -351,36 +352,42 @@
 
             if (getReq.ok) {
                 const getRes = await getReq.json();
-                currentSha = getRes.sha;
+                actualSha = getRes.sha;
             } else if (getReq.status !== 404) {
-                // Si no es 200 ni 404, hay un error de conexión/token
+                // Captura Detallada si el GET falla (Token inválido o Repositorio bloqueado)
+                const getErr = await getReq.json();
+                const errMsg = `ERROR DE LECTURA PREVIA\nCódigo HTTP: ${getReq.status}\nMensaje de GitHub: ${getErr.message}\nVerifique que su Token y URL sean correctos.`;
+                alert(errMsg);
                 throw new Error(`GET falló con HTTP ${getReq.status}`);
             }
 
-            // PASO 2: Construimos el cuerpo del PUT
+            // PASO 2: Construir el cuerpo (El Fallback)
             const bodyData = {
                 message: "SGF Master: Actualizando Base de Datos",
                 content: payloadBase64
             };
             
-            // Si obtuvimos un SHA válido, es obligatorio enviarlo para no recibir el error 405/409
-            if (currentSha) {
-                bodyData.sha = currentSha;
+            // Si el archivo ya existía (SHA no es nulo), lo adjuntamos. Si era 404, se omite.
+            if (actualSha) {
+                bodyData.sha = actualSha;
             }
 
-            // PASO 3: Disparamos el PUT definitivo
-            const putReq = await fetch(sgfConfig.api_url, {
+            // PASO 3: Ejecutar el PUT
+            const putReq = await fetch(apiUrlClean, {
                 method: "PUT",
                 headers: { 
-                    "Authorization": `Bearer ${realKey}`, 
+                    "Authorization": `token ${realKey}`, 
                     "Accept": "application/vnd.github.v3+json",
                     "Content-Type": "application/json" 
                 },
                 body: JSON.stringify(bodyData)
             });
 
+            // PASO 4: Evaluación Estricta del PUT
             if(!putReq.ok) {
                 const errorData = await putReq.json();
+                const errorMsg = `ERROR GITHUB HTTP ${putReq.status}\nMensaje exacto: ${errorData.message}\n\nPosibles causas:\n401: El Token no tiene permisos 'repo'.\n404: La URL del repositorio tiene un error.\n409/422: Conflicto de versiones (SHA invalido).`;
+                alert(errorMsg); // Alerta Detective en pantalla
                 throw new Error(`HTTP ${putReq.status} - ${errorData.message}`);
             }
             
@@ -390,7 +397,7 @@
 
         } catch (error) {
             console.error("Error crítico de Escritura:", error);
-            if(!silent) showToast(`Fallo al escribir en la nube: ${error.message}`, "error");
+            if(!silent) showToast(`Se interrumpió el proceso. Revise la alerta.`, "error");
             document.getElementById('sync-status').className = 'status-offline';
             document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
         }
@@ -416,7 +423,7 @@
         saveDB();
         closeModal('modalConfig');
         showToast("Canal enlazado. Inicializando conexión...", "success");
-        syncDataFromRemote(); 
+        syncDataToRemote(); // Forzamos el push de inmediato para probar conexión
     }
 
     /* =====================================================================
