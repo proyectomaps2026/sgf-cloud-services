@@ -27,6 +27,15 @@
             "u": "engelbert",
             "p": "engelbert",
             "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
+        },
+        {
+            "user": "leander",
+            "id": "ID-LEANDER-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-03",
+            "u": "leander",
+            "p": "leander",
+            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
     "ordenes": []
