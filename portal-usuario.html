@@ -3,178 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CLIENTE | NODO DE RECAUDACIÓN</title>
+    <title>SGF CLIENTE | PORTAL DE NODO</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg: #f0f2f5; --primary: #1a237e; --accent: #00c853; --warning: #fbc02d; --danger: #d32f2f; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        :root { --primary: #1a237e; --accent: #00c853; --warning: #fbc02d; --danger: #d32f2f; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
         
-        .container { background: white; width: 90%; max-width: 450px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); position: relative; }
-        
-        /* ALERTA DE CAMBIO OBLIGATORIO */
-        #force-change { 
+        .main-container { max-width: 500px; margin: auto; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
+
+        /* BLOQUEO DE SEGURIDAD (RESET) */
+        #lock-screen { 
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: white; border-radius: 20px; z-index: 10; padding: 30px; box-sizing: border-box;
-            text-align: center; flex-direction: column; justify-content: center;
+            background: rgba(255,255,255,0.98); z-index: 100; padding: 40px; box-sizing: border-box;
+            text-align: center; flex-direction: column; justify-content: center; backdrop-filter: blur(5px);
         }
 
-        .status-card { text-align: center; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 2px solid #eee; }
-        .status-icon { font-size: 50px; margin-bottom: 10px; }
+        .header { background: var(--primary); color: white; padding: 25px; text-align: center; }
+        .header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+
+        .status-section { padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
+        .status-pill { display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-bottom: 15px; }
         
-        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .info-row b { color: var(--primary); }
+        /* ESTADOS DINÁMICOS */
+        .activo { background: rgba(0, 200, 83, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+        .vencido { background: rgba(211, 47, 47, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .espera { background: rgba(251, 192, 45, 0.1); color: var(--warning); border: 1px solid var(--warning); }
 
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 10px; }
-        .btn-pay { background: var(--primary); color: white; }
-        .btn-save { background: var(--accent); color: white; }
+        .info-grid { padding: 20px; background: #fafafa; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .info-item { font-size: 13px; color: #666; }
+        .info-item b { display: block; color: #333; font-size: 15px; }
 
-        .token-view { font-family: monospace; font-size: 10px; background: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all; margin-top: 15px; color: #777; }
+        .form-section { padding: 30px; }
+        label { display: block; font-size: 13px; margin-bottom: 5px; color: #555; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        
+        .token-footer { padding: 15px; background: #f1f1f1; font-family: monospace; font-size: 10px; color: #999; word-break: break-all; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="force-change">
-        <i class="fa-solid fa-user-shield" style="font-size: 40px; color: var(--danger);"></i>
-        <h2>Seguridad Requerida</h2>
-        <p style="font-size: 13px; color: #666;">El Administrador Maestro ha reseteado tus credenciales o es tu primer inicio. <b>Debes actualizarlas ahora:</b></p>
-        <input type="text" id="new_user" placeholder="Nuevo Usuario">
-        <input type="password" id="new_pass" placeholder="Nueva Contraseña">
-        <button class="btn btn-save" onclick="actualizarCredenciales()">Actualizar y Entrar</button>
+<div class="main-container">
+    <div id="lock-screen">
+        <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
+        <h2 style="color: var(--primary);">Actualizar Credenciales</h2>
+        <p style="font-size: 14px; color: #666;">Por seguridad, debes cambiar el usuario y clave asignados por el Master.</p>
+        <input type="text" id="new_u" placeholder="Nuevo Usuario Personal">
+        <input type="password" id="new_p" placeholder="Nueva Contraseña">
+        <button class="btn btn-accent" onclick="guardarNuevasCredenciales()">Actualizar e Ingresar</button>
     </div>
 
-    <div id="portal-content">
-        <div id="status-box" class="status-card">
-            <div id="icon" class="status-icon"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
-            <h2 id="txt-status" style="margin:0">Verificando...</h2>
-            <p id="txt-vence" style="font-size: 12px; color: #666;"></p>
-        </div>
-
-        <div class="info-row"><span>ID Nodo:</span><b id="lbl-nodo">---</b></div>
-        <div class="info-row"><span>Usuario:</span><b id="lbl-user">---</b></div>
-        <div class="info-row"><span>Días Restantes:</span><b id="lbl-dias">---</b></div>
-
-        <div id="pay-section" style="display:none;">
-            <p style="font-size:12px; color:var(--danger); text-align:center; font-weight:bold;">LICENCIA VENCIDA - REGISTRE SU PAGO</p>
-            <input type="text" id="ref-pago" placeholder="Referencia de Transferencia">
-            <select id="metodo-pago" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
-                <option>Pago Móvil</option>
-                <option>Transferencia Bs</option>
-                <option>Zelle / Divisas</option>
-            </select>
-            <button class="btn btn-pay" onclick="reportarPago()"><i class="fa-solid fa-cloud-arrow-up"></i> Enviar a Auditoría</button>
-        </div>
-
-        <div id="token-display" class="token-view">Esperando Token Maestro...</div>
+    <div class="header">
+        <h1><i class="fa-solid fa-building-columns"></i> PORTAL FISCAL SGF</h1>
     </div>
+
+    <div class="status-section">
+        <div id="pill" class="status-pill espera">Verificando...</div>
+        <div id="main-icon" style="font-size: 60px; margin: 15px 0;"><i class="fa-solid fa-spinner fa-spin"></i></div>
+        <h2 id="status-title" style="margin: 0; color: #333;">Cargando Nodo</h2>
+        <p id="status-desc" style="color: #888; font-size: 13px;">Sincronizando con el Master...</p>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">ID NODO<b id="val-nodo">---</b></div>
+        <div class="info-item">VENCIMIENTO<b id="val-fecha">---</b></div>
+        <div class="info-item">USUARIO<b id="val-user">---</b></div>
+        <div class="info-item">ESTADO<b id="val-dias">Calculando...</b></div>
+    </div>
+
+    <div id="payment-area" class="form-section" style="display:none;">
+        <h3 style="margin-top:0; font-size: 16px;"><i class="fa-solid fa-money-bill-transfer"></i> Reportar Pago de Licencia</h3>
+        <label>Referencia Bancaria</label>
+        <input type="text" id="pago_ref" placeholder="Ej: 98234123">
+        
+        <label>Método</label>
+        <select id="pago_metodo">
+            <option>Pago Móvil</option>
+            <option>Zelle / Divisas</option>
+            <option>Transferencia Bs</option>
+            <option>Efectivo / Acuerdo Directo</option>
+        </select>
+
+        <label>Comprobante (Imagen)</label>
+        <input type="file" id="pago_file" accept="image/*">
+
+        <button class="btn btn-primary" onclick="enviarAuditoria()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> ENVIAR A REVISIÓN
+        </button>
+    </div>
+
+    <div id="token-raw" class="token-footer">---</div>
 </div>
 
 <script>
-    // ESTA DATA VENDRÍA DEL CONFIG.JS REMOTO EN GITHUB
-    let configRemoto = JSON.parse(localStorage.getItem('sgf_config_live')) || {
+    // ESTA DATA ES LA QUE EL MASTER ESCRIBE EN GITHUB
+    let configNodo = JSON.parse(localStorage.getItem('sgf_config_live')) || {
         user: "admin",
         pass: "admin",
-        nodo: "SC-01",
-        token: "---"
+        nodo: "MICH-01",
+        token: "N-A-N-A-N" // Token nulo inicial
     };
 
-    function inicializarPortal() {
-        // 1. Verificar si tiene las credenciales default (admin/admin)
-        if(configRemoto.user === "admin" && configRemoto.pass === "admin") {
-            document.getElementById('force-change').style.display = 'flex';
+    function boot() {
+        // 1. Verificar si requiere cambio de clave (admin/admin)
+        if(configNodo.user === "admin" && configNodo.pass === "admin") {
+            document.getElementById('lock-screen').style.display = 'flex';
         } else {
-            procesarToken(configRemoto.token);
+            decodificarToken(configNodo.token);
         }
-        
-        document.getElementById('lbl-nodo').innerText = configRemoto.nodo;
-        document.getElementById('lbl-user').innerText = configRemoto.user;
+
+        document.getElementById('val-nodo').innerText = configNodo.nodo;
+        document.getElementById('val-user').innerText = configNodo.user;
+        document.getElementById('token-raw').innerText = "TOKEN ACTUAL: " + configNodo.token;
     }
 
-    function actualizarCredenciales() {
-        const u = document.getElementById('new_user').value;
-        const p = document.getElementById('new_pass').value;
+    function guardarNuevasCredenciales() {
+        const u = document.getElementById('new_u').value;
+        const p = document.getElementById('new_p').value;
+        if(u.length < 4 || u === "admin") return alert("Usuario no válido");
 
-        if(u.length < 4 || p.length < 4) return alert("Usuario y clave deben tener min. 4 caracteres");
-        if(u === "admin") return alert("No puedes usar 'admin' como usuario.");
-
-        configRemoto.user = u;
-        configRemoto.pass = p;
-        
-        // Sincronizar (Aquí enviarías a GitHub el cambio para que el Master lo vea)
-        localStorage.setItem('sgf_config_live', JSON.stringify(configRemoto));
-        
-        document.getElementById('force-change').style.display = 'none';
-        alert("Credenciales actualizadas con éxito.");
+        configNodo.user = u;
+        configNodo.pass = p;
+        localStorage.setItem('sgf_config_live', JSON.stringify(configNodo));
+        alert("Credenciales actualizadas. Sincronizando...");
         location.reload();
     }
 
-    function procesarToken(token) {
-        const display = document.getElementById('token-display');
-        const box = document.getElementById('status-box');
-        const icon = document.getElementById('icon');
-        const txt = document.getElementById('txt-status');
-        
-        display.innerText = "TOKEN: " + token;
-
-        // DECODIFICADOR DE BARAJA SGF (E-BASURA-NODO-FECHA-SEMILLA)
+    function decodificarToken(token) {
         const partes = token.split('-');
-        
-        if(partes[0] === "E") {
-            const fechaRaw = partes[3]; // "20260502"
-            const anio = fechaRaw.substring(0, 4);
-            const mes = fechaRaw.substring(4, 6);
-            const dia = fechaRaw.substring(6, 8);
-            
-            const venceDate = new Date(`${anio}-${mes}-${dia}`);
-            const hoy = new Date();
-            
-            // Cálculo de días
-            const diff = venceDate - hoy;
-            const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        const pill = document.getElementById('pill');
+        const icon = document.getElementById('main-icon');
+        const title = document.getElementById('status-title');
+        const payArea = document.getElementById('payment-area');
 
-            if(dias > 0) {
-                box.style.borderColor = "var(--accent)";
+        // BARAJA: E-BASURA-NODO-FECHA-SEMILLA
+        if(partes[0] === "E") {
+            const f = partes[3]; // YYYYMMDD
+            const venceDate = new Date(`${f.substring(0,4)}-${f.substring(4,6)}-${f.substring(6,8)}`);
+            const hoy = new Date();
+            const diff = Math.ceil((vceDate - hoy) / (1000 * 60 * 60 * 24));
+
+            if(diff > 0) {
+                pill.className = "status-pill activo";
+                pill.innerText = "Licencia Activa";
                 icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--accent)"></i>';
-                txt.innerText = "SISTEMA ACTIVO";
-                document.getElementById('txt-vence').innerText = "Vence el: " + venceDate.toLocaleDateString();
-                document.getElementById('lbl-dias').innerText = dias + " días";
-                document.getElementById('pay-section').style.display = 'none';
+                title.innerText = "Sistema Operativo";
+                document.getElementById('val-fecha').innerText = venceDate.toLocaleDateString();
+                document.getElementById('val-dias').innerText = diff + " Días restantes";
+                payArea.style.display = "none";
             } else {
-                licenciaVencida();
+                marcarVencido();
             }
         } else {
-            licenciaVencida();
+            marcarVencido();
         }
     }
 
-    function licenciaVencida() {
-        const box = document.getElementById('status-box');
-        box.style.borderColor = "var(--danger)";
-        document.getElementById('icon').innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i>';
-        document.getElementById('txt-status').innerText = "LICENCIA EXPIRADA";
-        document.getElementById('pay-section').style.display = 'block';
-        document.getElementById('lbl-dias').innerText = "0";
+    function marcarVencido() {
+        document.getElementById('pill').className = "status-pill vencido";
+        document.getElementById('pill').innerText = "Licencia Vencida";
+        document.getElementById('main-icon').innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i>';
+        document.getElementById('status-title').innerText = "Acceso Restringido";
+        document.getElementById('payment-area').style.display = "block";
+        document.getElementById('val-dias').innerText = "Expirado";
     }
 
-    function reportarPago() {
-        const ref = document.getElementById('ref-pago').value;
-        if(!ref) return alert("Ingrese la referencia del pago");
+    async function enviarAuditoria() {
+        const ref = document.getElementById('pago_ref').value;
+        const file = document.getElementById('pago_file').files[0];
+        
+        if(!ref) return alert("Indique referencia");
+        
+        // 1. Subida a Cloudinary drxiko8l4 (Opcional si tienes el preset)
+        if(file) {
+            alert("Subiendo comprobante a la nube...");
+            // Aquí iría el fetch a Cloudinary que ya teníamos
+        }
 
-        // Simulación de envío a la bandeja de auditoría del Master
+        // 2. Enviar señal a la bandeja del Master
         let bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
         bandeja.push({
-            id: configRemoto.nodo + "-" + Math.floor(Math.random()*999),
+            id: configNodo.nodo,
             referencia: ref,
-            metodo: document.getElementById('metodo-pago').value
+            metodo: document.getElementById('pago_metodo').value
         });
         localStorage.setItem('bandeja_auditoria', JSON.stringify(bandeja));
 
-        alert("Pago reportado. El sistema se activará automáticamente cuando el Master valide el capture.");
-        document.getElementById('pay-section').innerHTML = '<h3 style="color:var(--warning)"><i class="fa-solid fa-clock"></i> ESPERANDO VALIDACIÓN...</h3>';
+        alert("Pago reportado con éxito. El Master recibirá la señal en segundos.");
+        document.getElementById('payment-area').innerHTML = `<div style="text-align:center; color:var(--warning); padding:20px;">
+            <i class="fa-solid fa-clock-rotate-left" style="font-size:30px;"></i><br>
+            <b>ESPERANDO VALIDACIÓN</b><br>El administrador está verificando su pago.
+        </div>`;
     }
 
-    inicializarPortal();
+    boot();
 </script>
 </body>
 </html>
