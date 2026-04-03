@@ -77,8 +77,8 @@
 <div class="container">
     <div id="force-reset">
         <i class="fa-solid fa-user-lock" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
-        <h2>Seguridad Requerida</h2>
-        <p style="color:var(--text-muted)">Actualiza el usuario y clave para activar el Nodo.</p>
+        <h2>Seguridad de Nodo</h2>
+        <p style="color:var(--text-muted)">Para finalizar su sesión y proteger su Llave API, debe establecer sus propias credenciales de acceso.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
         <button class="btn-main" onclick="guardarReset()">ESTABLECER CREDENCIALES</button>
@@ -86,8 +86,8 @@
 
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
-        <div class="subtitle">NODO CENTRAL DE INTELIGENCIA FISCAL</div>
-        <div class="input-group"><input type="text" id="ui" placeholder="Usuario"></div>
+        <div class="subtitle">Servicios de Datos y Hosting Seguros</div>
+        <div class="input-group"><input type="text" id="ui" placeholder="USUARIO"></div>
         <div class="input-group"><input type="password" id="pi" placeholder="Contraseña"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
     </div>
@@ -95,7 +95,7 @@
     <div id="status-section">
         <div class="panel-header">
             <div id="display-user" style="font-weight: bold;">SGF-LOCAL</div>
-            <button onclick="location.reload()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
+            <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
         <div class="panel-body">
@@ -104,7 +104,7 @@
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
-                        Vencimiento: <b id="lbl-vence">---</b> | Nodo: <b id="lbl-nodo">---</b>
+                        Licencia de Datos activa hasta: <b id="lbl-vence">---</b>
                     </p>
                 </div>
 
@@ -113,7 +113,7 @@
                     <div class="token-container">
                         <span id="token-display">---</span>
                         <button class="btn-copy" onclick="copiarLlave()">
-                            <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
+                            <i class="fa-solid fa-copy"></i> COPIAR LLAVE API
                         </button>
                     </div>
                     <p style="font-size: 10px; color: #999; margin-top: 10px;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
@@ -169,19 +169,16 @@
             document.getElementById('status-section').style.display = 'block';
             document.getElementById('display-user').innerText = sgfConfig.n + " | " + sgfConfig.u;
             
-            if(sgfConfig.u === "admin" && sgfConfig.p === "admin") {
-                document.getElementById('force-reset').style.display = 'flex';
-            } else {
-                procesarLicencia();
-            }
+            // EL RESET YA NO SE DISPARA AUTOMÁTICAMENTE AL USAR admin/admin
+            procesarLicencia();
+
         } else { alert("Credenciales incorrectas."); }
     }
 
     function procesarLicencia() {
         const token = sgfConfig.t;
         document.getElementById('token-display').innerText = token;
-        document.getElementById('lbl-nodo').innerText = sgfConfig.n;
-
+        
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
             const f = partes[3]; // "20260402"
@@ -192,6 +189,7 @@
 
             const ind = document.getElementById('status-indicator');
             const border = document.getElementById('status-card-border');
+            // Muestra la fecha en formato DD/MM/YYYY como se solicitó
             document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
 
             if(diff > 0) {
@@ -208,7 +206,12 @@
 
     function copiarLlave() {
         const t = document.getElementById('token-display').innerText;
-        navigator.clipboard.writeText(t).then(() => alert("Llave copiada para el mapa."));
+        navigator.clipboard.writeText(t).then(() => alert("Llave API copiada."));
+    }
+
+    // NUEVA FUNCIÓN PARA EL PROTOCOLO DE SALIDA SEGURA
+    function iniciarLogoutSeguro() {
+        document.getElementById('force-reset').style.display = 'flex';
     }
 
     function guardarReset() {
@@ -217,6 +220,7 @@
         if(nu.length < 4 || nu === "admin") return alert("Usuario inválido.");
         sgfConfig.u = nu; sgfConfig.p = np;
         localStorage.setItem('sgf_portal_v3', JSON.stringify(sgfConfig));
+        // Se recarga la página solo después de guardar las credenciales
         location.reload();
     }
 
