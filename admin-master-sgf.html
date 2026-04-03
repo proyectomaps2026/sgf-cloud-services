@@ -96,7 +96,6 @@
 <div class="sidebar">
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
     
-    <!-- Monitor de Sincronización Nube -->
     <div id="sync-status"><i class="fa-solid fa-cloud"></i> Esperando Conexión...</div>
 
     <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
@@ -197,16 +196,13 @@
 <div id="modalConfig" class="modal">
     <div class="modal-content">
         <h3>Configuración de Canal (Nube)</h3>
-        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Configure las credenciales de GitHub. El Token será inyectado de forma invertida (Revert Key) en `config-pago.json` para protegerlo.</p>
-        
-        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Ruta de la API (Contents URL)</label>
-        <input type="text" id="cfg_url" placeholder="Ej: https://api.github.com/repos/USUARIO/REPO/contents/config-pago.json">
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token de GitHub. El sistema lo invertirá automáticamente y lo protegerá en la base de datos.</p>
         
         <label style="font-size: 11px; color: #888; text-transform: uppercase;">Token GitHub (Classic/Fine-grained)</label>
         <input type="password" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
         
         <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Conectar y Encriptar</button>
+            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Cifrar Token</button>
             <button class="btn btn-action" onclick="closeModal('modalConfig')">Cancelar</button>
         </div>
     </div>
@@ -236,8 +232,9 @@
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA LOCAL
        ===================================================================== */
+    const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
     const dbKey = 'sgf_master_db_v17'; 
-    let sgfConfig = { usuarios: [], ordenes: [], cloud_access: "", api_url: "" };
+    let sgfConfig = { usuarios: [], ordenes: [] };
 
     function loadDB() {
         try {
@@ -266,22 +263,22 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       MOTOR DE SINCRONIZACIÓN ABSOLUTO (BLINDAJE Y REPORTES)
+       MOTOR DE SINCRONIZACIÓN BIFÁSICO (LECTURA Y ESCRITURA ABSOLUTA)
        ===================================================================== */
 
-    // 1. POLLING DE LECTURA (Bandeja de Entrada en Segundo Plano)
+    // 1. TAREA DE FONDO (Polling)
     async function syncDataFromRemote() {
-        if (!sgfConfig.api_url || !sgfConfig.cloud_access) return;
+        const semillaRevertida = localStorage.getItem('semilla_revert');
+        if (!semillaRevertida) return;
 
-        const llave_real = sgfConfig.cloud_access.split('').reverse().join('');
-        const apiUrlClean = sgfConfig.api_url.trim();
+        const realKey = semillaRevertida.split('').reverse().join('');
         const statusInd = document.getElementById('sync-status');
         
         try {
-            const response = await fetch(apiUrlClean, {
+            const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
                 headers: { 
-                    "Authorization": "token " + llave_real, 
+                    "Authorization": "token " + realKey, 
                     "Accept": "application/vnd.github.v3+json",
                     "Cache-Control": "no-cache" 
                 }
@@ -298,12 +295,11 @@
                 saveDB();
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
-            
             } else if (response.status === 404) {
                 statusInd.className = 'status-warning';
                 statusInd.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Archivo Nuevo (Listo para Push)';
             } else {
-                console.warn(`Polling Get Error HTTP: ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
             statusInd.className = 'status-offline';
@@ -313,43 +309,43 @@
 
     setInterval(syncDataFromRemote, 15000);
 
-    // 2. ESCRITURA DE CAJA NEGRA (DETECTIVE DE ERRORES: GET -> PUT)
+    // 2. ESCRITURA FORZADA (El Push Simplificado y Blindado)
     async function syncDataToRemote(silent = false) {
-        if (!sgfConfig.api_url || !sgfConfig.cloud_access) {
+        const semillaRevertida = localStorage.getItem('semilla_revert');
+        
+        if (!semillaRevertida) {
             if(!silent) showToast("Canal no configurado. Vaya a Configuración de Canal.", "warning");
             return;
         }
 
         if(!silent) showToast("Procesando actualización en GitHub...", "info");
         
-        // 1. Lectura del Token Real y Reporte en Consola
-        const llave_real = sgfConfig.cloud_access.split('').reverse().join('');
-        console.log("Token usado:", llave_real);
+        // 2.1 Revertimos la llave para usarla en los headers
+        const realKey = semillaRevertida.split('').reverse().join('');
         
-        const apiUrlClean = sgfConfig.api_url.trim();
-        
-        // Asegurar que ROOT existe siempre
+        // Garantizamos existencia del ROOT Admin
         if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
              sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
 
-        const miJsonData = {
-            cloud_access: sgfConfig.cloud_access,
+        // 2.2 Construimos el payload. INYECTAMOS LA SEMILLA REVERTIDA PARA EL PORTAL
+        const payloadToUpload = {
+            cloud_access: semillaRevertida,
             usuarios: sgfConfig.usuarios,
             ordenes: sgfConfig.ordenes
         };
 
-        // 3. Codificación Limpia Recomendada
-        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(miJsonData, null, 4))));
+        // 2.3 Codificación Limpia (A prueba de caracteres raros)
+        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
         let actualSha = null;
 
-        // 2a. Fase de GET (Verificación del SHA)
+        // 2.4 Intento Rápido de GET (Buscamos el SHA fantasma)
         try {
-            const getReq = await fetch(apiUrlClean, {
+            const getReq = await fetch(GITHUB_API_URL, {
                 method: "GET",
                 headers: { 
-                    "Authorization": "token " + llave_real, 
+                    "Authorization": "token " + realKey, 
                     "Accept": "application/vnd.github.v3+json",
                     "Cache-Control": "no-cache"
                 }
@@ -358,46 +354,39 @@
             if (getReq.ok) {
                 const getRes = await getReq.json();
                 actualSha = getRes.sha;
-            } else if (getReq.status !== 404) {
-                const errText = await getReq.text();
-                alert(`Fallo en Fase: LECTURA PREVIA (GET)\nStatus: ${getReq.status}\nInfo: ${errText}`);
-                throw new Error("Abortado por fallo en GET");
             }
-        } catch (error) {
-            if (error.message !== "Abortado por fallo en GET") {
-                alert(`Fallo en Fase: RED LECTURA (GET)\nInfo: ${error.message}`);
-            }
-            if(!silent) showToast("Error de conexión durante lectura.", "error");
-            return;
+        } catch(e) {
+            // Silencioso. Si no agarra el SHA, asumimos que es archivo nuevo.
         }
 
-        // 2b. Construcción del Payload del PUT
+        // 2.5 Preparación del Body del PUT
         const bodyData = {
-            message: "SGF Master: Actualizando Base de Datos",
+            message: "SGF Master: Sincronización de Base de Datos Central",
             content: payloadBase64
         };
         
-        // IMPORTANTE: Inserción Condicional del SHA
+        // Regla de Oro GitHub: Solo enviar 'sha' si realmente existe
         if (actualSha) {
             bodyData.sha = actualSha;
         }
 
-        // 2c. Fase de PUT (Escritura Definitiva)
+        // 2.6 Disparo Definitivo (El PUT)
         try {
-            const putReq = await fetch(apiUrlClean, {
+            const putReq = await fetch(GITHUB_API_URL, {
                 method: "PUT",
                 headers: { 
-                    "Authorization": "token " + llave_real, 
-                    "Content-Type": "application/json",
-                    "Accept": "application/vnd.github.v3+json" 
+                    "Authorization": "token " + realKey, 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Content-Type": "application/json" 
                 },
                 body: JSON.stringify(bodyData)
             });
 
             if(!putReq.ok) {
-                const errText = await putReq.text();
-                alert(`Fallo en Fase: ESCRITURA (PUT)\nStatus: ${putReq.status}\nInfo: ${errText}`);
-                throw new Error("Abortado por fallo en PUT");
+                // REPORTE DE CAJA NEGRA (El Detective de Errores)
+                const errData = await putReq.json();
+                alert(`FALLO EN ESCRITURA (PUT)\nCódigo HTTP: ${putReq.status}\nRespuesta de GitHub: ${errData.message}`);
+                throw new Error("Abortado por rechazo de GitHub");
             }
             
             if(!silent) showToast("Base de datos central sincronizada con éxito.", "success");
@@ -405,36 +394,43 @@
             document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
 
         } catch (error) {
-            if (error.message !== "Abortado por fallo en PUT") {
-                alert(`Fallo en Fase: RED ESCRITURA (PUT)\nInfo: ${error.message}`);
+            if (error.message !== "Abortado por rechazo de GitHub") {
+                alert(`FALLO DE RED O CORS\nInformación: ${error.message}`);
             }
-            if(!silent) showToast("Se interrumpió el proceso de escritura.", "error");
             document.getElementById('sync-status').className = 'status-offline';
             document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
         }
     }
 
     /* =====================================================================
-       CONFIGURACIÓN DEL CANAL (REVERT KEY)
+       CONFIGURACIÓN DEL CANAL (LOCAL STORAGE REVERT)
        ===================================================================== */
     function abrirConfigCanal() {
-        document.getElementById('cfg_url').value = sgfConfig.api_url || "";
-        if(sgfConfig.cloud_access) document.getElementById('cfg_token').value = sgfConfig.cloud_access.split('').reverse().join('');
+        const semillaActual = localStorage.getItem('semilla_revert');
+        if(semillaActual) {
+            // Para mostrarla, la volvemos a poner normal
+            document.getElementById('cfg_token').value = semillaActual.split('').reverse().join('');
+        } else {
+            document.getElementById('cfg_token').value = '';
+        }
         openModal('modalConfig');
     }
 
     function guardarConfigCanal() {
-        const url = document.getElementById('cfg_url').value.trim();
         const token = document.getElementById('cfg_token').value.trim();
-        if(!url || !token) return showToast("Complete URL y Token.", "error");
+        if(!token) return showToast("Ingrese el Token de GitHub.", "error");
 
-        sgfConfig.api_url = url;
-        sgfConfig.cloud_access = token.split('').reverse().join('');
+        // 1. Invertimos el Token
+        const semillaRevertida = token.split('').reverse().join('');
         
-        saveDB();
+        // 2. Lo guardamos en el navegador (Almacén Seguro)
+        localStorage.setItem('semilla_revert', semillaRevertida);
+        
         closeModal('modalConfig');
-        showToast("Canal enlazado. Inicializando conexión...", "success");
-        syncDataToRemote(); 
+        showToast("Token cifrado y guardado. Inicializando conexión...", "success");
+        
+        // Hacemos el Poll inicial
+        syncDataFromRemote(); 
     }
 
     /* =====================================================================
@@ -559,7 +555,7 @@
 
     // Inicializar
     loadDB(); showTab('clientes');
-    if (sgfConfig.api_url) syncDataFromRemote();
+    syncDataFromRemote();
 </script>
 </body>
 </html>
