@@ -16,8 +16,7 @@
         #sync-status { font-size: 11px; color: #888; text-align: center; margin-bottom: 20px; font-weight: bold; padding: 10px; border-radius: 8px; background: #111; }
         .status-online { color: var(--success) !important; border: 1px solid rgba(0, 200, 83, 0.3); background: rgba(0, 200, 83, 0.1) !important; }
         .status-offline { color: var(--danger) !important; border: 1px solid rgba(255, 51, 51, 0.3); background: rgba(255, 51, 51, 0.1) !important; }
-        .status-warning { color: var(--warning) !important; border: 1px solid rgba(255, 204, 0, 0.3); background: rgba(255, 204, 0, 0.1) !important; }
-
+        
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
         
@@ -69,9 +68,7 @@
         .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         .modal-content h3 { margin-top: 0; color: white; font-size: 18px; margin-bottom: 10px; }
         input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
-        textarea { height: 150px; font-family: monospace; color: #00c853; resize: none; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
-
+        
         /* Notificaciones Toast */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; min-width: 250px;}
@@ -101,7 +98,7 @@
     <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
     
-    <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configuración de Canal</div>
+    <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configurar Llave (GitHub)</div>
     <div class="nav-item sync-btn" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
 </div>
 
@@ -136,7 +133,7 @@
 <div class="main" id="view-pagos" style="display:none;">
     <div class="header">
         <h1>Auditoría de Trámites</h1>
-        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Historial (Nube)</button>
+        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Historial</button>
     </div>
     <div class="table-container">
         <table>
@@ -174,7 +171,6 @@
         <h3>Aprobar y Generar Licencia</h3>
         <p style="font-size:12px; color:#888; margin-bottom: 10px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
         
-        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Extensión de Servicio</label>
         <select id="dias_extension">
             <option value="30">Licencia Mensual (+30 Días)</option>
             <option value="90">Licencia Trimestral (+90 Días)</option>
@@ -192,17 +188,16 @@
     </div>
 </div>
 
-<!-- Modal Configuración de Canal -->
+<!-- Modal Configuración de Llave (Solo Revert) -->
 <div id="modalConfig" class="modal">
     <div class="modal-content">
-        <h3>Configuración de Canal (Nube)</h3>
-        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token de GitHub. El sistema lo invertirá automáticamente y lo protegerá en la base de datos.</p>
+        <h3>Configurar Llave (GitHub)</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token (ghp_...). El sistema lo invertirá automáticamente y lo protegerá en su navegador.</p>
         
-        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Token GitHub (Classic/Fine-grained)</label>
         <input type="password" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
         
         <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Cifrar Token</button>
+            <button class="btn btn-primary" onclick="guardarConfigCanal()" style="flex:1; background: var(--purple);"><i class="fa-solid fa-lock"></i> Guardar Token</button>
             <button class="btn btn-action" onclick="closeModal('modalConfig')">Cancelar</button>
         </div>
     </div>
@@ -218,22 +213,23 @@
         }
     }, 1000);
 
-    // Sistema Toasts UI
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        let icon = type === 'error' ? 'fa-exclamation-triangle' : (type === 'info' ? 'fa-info-circle' : (type === 'warning' ? 'fa-exclamation-circle' : 'fa-check-circle'));
+        let icon = type === 'error' ? 'fa-exclamation-triangle' : (type === 'info' ? 'fa-info-circle' : 'fa-check-circle');
         toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
         container.appendChild(toast);
-        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
+        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
     }
 
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA LOCAL
        ===================================================================== */
+    // URL Fija (Estilo Mapa)
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
-    const dbKey = 'sgf_master_db_v17'; 
+    
+    const dbKey = 'sgf_master_db_v20'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
 
     function loadDB() {
@@ -263,10 +259,10 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       MOTOR DE SINCRONIZACIÓN BIFÁSICO (LECTURA Y ESCRITURA ABSOLUTA)
+       MOTOR DE SINCRONIZACIÓN DIRECTO (ESTILO MAPA + REVERT KEY)
        ===================================================================== */
 
-    // 1. TAREA DE FONDO (Polling)
+    // 1. POLLING DE LECTURA
     async function syncDataFromRemote() {
         const semillaRevertida = localStorage.getItem('semilla_revert');
         if (!semillaRevertida) return;
@@ -277,11 +273,7 @@
         try {
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { 
-                    "Authorization": "token " + realKey, 
-                    "Accept": "application/vnd.github.v3+json",
-                    "Cache-Control": "no-cache" 
-                }
+                headers: { "Authorization": "token " + realKey }
             });
             
             if (response.ok) {
@@ -291,15 +283,10 @@
                 
                 sgfConfig.usuarios = cloudState.usuarios || [];
                 sgfConfig.ordenes = cloudState.ordenes || [];
-                
                 saveDB();
+                
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
-            } else if (response.status === 404) {
-                statusInd.className = 'status-warning';
-                statusInd.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Archivo Nuevo (Listo para Push)';
-            } else {
-                throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
             statusInd.className = 'status-offline';
@@ -309,93 +296,87 @@
 
     setInterval(syncDataFromRemote, 15000);
 
-    // 2. ESCRITURA FORZADA (El Push Simplificado y Blindado)
+    // 2. ESCRITURA DIRECTA
     async function syncDataToRemote(silent = false) {
         const semillaRevertida = localStorage.getItem('semilla_revert');
         
         if (!semillaRevertida) {
-            if(!silent) showToast("Canal no configurado. Vaya a Configuración de Canal.", "warning");
+            if(!silent) showToast("Primero configure su Llave GitHub.", "warning");
             return;
         }
 
-        if(!silent) showToast("Procesando actualización en GitHub...", "info");
+        if(!silent) showToast("Actualizando nube...", "info");
         
-        // 2.1 Revertimos la llave para usarla en los headers
+        // Volteamos la semilla para usar el token original
         const realKey = semillaRevertida.split('').reverse().join('');
         
-        // Garantizamos existencia del ROOT Admin
+        // Asegurar que ROOT existe siempre
         if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
              sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
 
-        // 2.2 Construimos el payload. INYECTAMOS LA SEMILLA REVERTIDA PARA EL PORTAL
+        // Construir JSON (El Espejo: Incluimos la llave revertida para el Portal)
         const payloadToUpload = {
             cloud_access: semillaRevertida,
             usuarios: sgfConfig.usuarios,
             ordenes: sgfConfig.ordenes
         };
 
-        // 2.3 Codificación Limpia (A prueba de caracteres raros)
-        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
+        // Codificación Requerida por GitHub (Base64 Estándar)
+        const jsonString = JSON.stringify(payloadToUpload, null, 4);
+        const payloadBase64 = btoa(unescape(encodeURIComponent(jsonString)));
 
-        let actualSha = null;
+        let fileSha = null;
 
-        // 2.4 Intento Rápido de GET (Buscamos el SHA fantasma)
+        // Intentar obtener el SHA silenciosamente (Evita error de versionado)
         try {
             const getReq = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { 
-                    "Authorization": "token " + realKey, 
-                    "Accept": "application/vnd.github.v3+json",
-                    "Cache-Control": "no-cache"
-                }
+                headers: { "Authorization": "token " + realKey }
             });
-
             if (getReq.ok) {
                 const getRes = await getReq.json();
-                actualSha = getRes.sha;
+                fileSha = getRes.sha;
             }
-        } catch(e) {
-            // Silencioso. Si no agarra el SHA, asumimos que es archivo nuevo.
+        } catch(e) { 
+            // Silencioso. Si no agarra el SHA, procederá al PUT directo como archivo nuevo.
         }
 
-        // 2.5 Preparación del Body del PUT
+        // Preparar PUT
         const bodyData = {
-            message: "SGF Master: Sincronización de Base de Datos Central",
+            message: "SGF Master: Guardado directo",
             content: payloadBase64
         };
         
-        // Regla de Oro GitHub: Solo enviar 'sha' si realmente existe
-        if (actualSha) {
-            bodyData.sha = actualSha;
+        if (fileSha) {
+            bodyData.sha = fileSha; // Solo lo envía si existe
         }
 
-        // 2.6 Disparo Definitivo (El PUT)
+        // Disparo Final a GitHub
         try {
             const putReq = await fetch(GITHUB_API_URL, {
                 method: "PUT",
                 headers: { 
-                    "Authorization": "token " + realKey, 
-                    "Accept": "application/vnd.github.v3+json",
+                    "Authorization": "token " + realKey,
                     "Content-Type": "application/json" 
                 },
                 body: JSON.stringify(bodyData)
             });
 
             if(!putReq.ok) {
-                // REPORTE DE CAJA NEGRA (El Detective de Errores)
+                // Diagnóstico Silencioso: Alerta de Caja Negra si falla
                 const errData = await putReq.json();
-                alert(`FALLO EN ESCRITURA (PUT)\nCódigo HTTP: ${putReq.status}\nRespuesta de GitHub: ${errData.message}`);
-                throw new Error("Abortado por rechazo de GitHub");
+                alert(`Error HTTP ${putReq.status}\nMensaje: ${errData.message}\nVerifique si su Token tiene permisos de Repositorio.`);
+                throw new Error("Rechazado por GitHub");
             }
             
-            if(!silent) showToast("Base de datos central sincronizada con éxito.", "success");
+            if(!silent) showToast("Sincronización exitosa.", "success");
             document.getElementById('sync-status').className = 'status-online';
             document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
 
         } catch (error) {
-            if (error.message !== "Abortado por rechazo de GitHub") {
-                alert(`FALLO DE RED O CORS\nInformación: ${error.message}`);
+            if(!silent && error.message !== "Rechazado por GitHub") {
+                alert(`Error de Conexión o Cors: ${error.message}`);
             }
             document.getElementById('sync-status').className = 'status-offline';
             document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
@@ -403,12 +384,12 @@
     }
 
     /* =====================================================================
-       CONFIGURACIÓN DEL CANAL (LOCAL STORAGE REVERT)
+       CONFIGURACIÓN DE LLAVE EN LOCALSTORAGE
        ===================================================================== */
     function abrirConfigCanal() {
         const semillaActual = localStorage.getItem('semilla_revert');
         if(semillaActual) {
-            // Para mostrarla, la volvemos a poner normal
+            // Mostrar token normal para edición
             document.getElementById('cfg_token').value = semillaActual.split('').reverse().join('');
         } else {
             document.getElementById('cfg_token').value = '';
@@ -418,19 +399,15 @@
 
     function guardarConfigCanal() {
         const token = document.getElementById('cfg_token').value.trim();
-        if(!token) return showToast("Ingrese el Token de GitHub.", "error");
+        if(!token) return showToast("Ingrese el Token.", "error");
 
-        // 1. Invertimos el Token
+        // Guarda la semilla invertida en LocalStorage
         const semillaRevertida = token.split('').reverse().join('');
-        
-        // 2. Lo guardamos en el navegador (Almacén Seguro)
         localStorage.setItem('semilla_revert', semillaRevertida);
         
         closeModal('modalConfig');
-        showToast("Token cifrado y guardado. Inicializando conexión...", "success");
-        
-        // Hacemos el Poll inicial
-        syncDataFromRemote(); 
+        showToast("Llave guardada. Inicializando...", "success");
+        syncDataToRemote(); 
     }
 
     /* =====================================================================
@@ -473,7 +450,7 @@
                     <td style="color:#aaa;">${decodificarFecha(u.t) ? `${decodificarFecha(u.t).substring(6,8)}/${decodificarFecha(u.t).substring(4,6)}/${decodificarFecha(u.t).substring(0,4)}` : '---'}</td>
                     <td style="text-align: right;">
                         <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
-                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar de Nube"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
             `;
@@ -497,7 +474,7 @@
     }
 
     /* =====================================================================
-       OPERACIONES SOBRE LA FUENTE DE VERDAD
+       ACCIONES DE INTERFAZ
        ===================================================================== */
     function crearTerminal() {
         const u = document.getElementById('n_user').value.toLowerCase();
@@ -507,14 +484,14 @@
     }
 
     function eliminarTerminal(user) {
-        if(confirm(`¿ELIMINAR a [${user}] de la Nube? El portal se le bloqueará inmediatamente.`)) {
+        if(confirm(`¿ELIMINAR a [${user}] de la Nube?`)) {
             sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== user);
             saveDB(); syncDataToRemote();
         }
     }
 
     function limpiarHistorial() {
-        if(confirm("¿Vaciar registro de transacciones en la Nube?")) {
+        if(confirm("¿Vaciar registro de transacciones?")) {
             sgfConfig.ordenes = [];
             saveDB(); syncDataToRemote();
         }
@@ -550,10 +527,9 @@
         }
         
         saveDB(); closeModal('modalToken');
-        syncDataToRemote(); // Sincronizamos con GitHub tras la aprobación
+        syncDataToRemote(); 
     }
 
-    // Inicializar
     loadDB(); showTab('clientes');
     syncDataFromRemote();
 </script>
