@@ -8,6 +8,15 @@
             "vencimiento": "2027-01-01",
             "licencia": "SGF-MASTER-INIT",
             "estado": "ACTIVO"
+        },
+        {
+            "user": "alcaldia",
+            "id": "ID-ALCALDIA-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-03",
+            "u": "alcaldia",
+            "p": "admin",
+            "t": "SGF-ALCA-MnMyMVEwa1F2UWtBVXpQQ09zbmdwTEswRGNuRm5MT3NIZks0X3BoZ3xNakF5Tmkwd05TMHdNdz09"
         }
     ],
     "ordenes": [
