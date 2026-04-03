@@ -14,8 +14,9 @@
         .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         
         #sync-status { font-size: 11px; color: #888; text-align: center; margin-bottom: 20px; font-weight: bold; padding: 10px; border-radius: 8px; background: #111; }
-        .status-online { color: var(--success) !important; border: 1px solid var(--success); }
-        .status-offline { color: var(--danger) !important; border: 1px solid var(--danger); }
+        .status-online { color: var(--success) !important; border: 1px solid rgba(0, 200, 83, 0.3); background: rgba(0, 200, 83, 0.1) !important; }
+        .status-offline { color: var(--danger) !important; border: 1px solid rgba(255, 51, 51, 0.3); background: rgba(255, 51, 51, 0.1) !important; }
+        .status-warning { color: var(--warning) !important; border: 1px solid rgba(255, 204, 0, 0.3); background: rgba(255, 204, 0, 0.1) !important; }
 
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
@@ -159,7 +160,6 @@
 <div id="modalNuevo" class="modal">
     <div class="modal-content">
         <h3>Alta de Nuevo Terminal</h3>
-        <input type="text" id="n_muni" placeholder="Nombre Terminal/Municipio (Ej: Sede Central)">
         <input type="text" id="n_user" placeholder="Usuario ID (Ej: alcaldia)">
         <input type="text" id="n_pass" placeholder="Clave Base" value="admin">
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -227,16 +227,16 @@
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        let icon = type === 'error' ? 'fa-exclamation-triangle' : (type === 'info' ? 'fa-info-circle' : 'fa-check-circle');
+        let icon = type === 'error' ? 'fa-exclamation-triangle' : (type === 'info' ? 'fa-info-circle' : (type === 'warning' ? 'fa-exclamation-circle' : 'fa-check-circle'));
         toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
         container.appendChild(toast);
-        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
+        setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
     }
 
     /* =====================================================================
-       VARIABLES GLOBALES Y MEMORIA LOCAL (Caché y Seguridad)
+       VARIABLES GLOBALES Y MEMORIA LOCAL
        ===================================================================== */
-    const dbKey = 'sgf_master_db_v15';
+    const dbKey = 'sgf_master_db_v16'; // Versión actualizada para limpiar caché vieja
     let sgfConfig = { usuarios: [], ordenes: [], cloud_access: "", api_url: "" };
     let currentSha = null;
 
@@ -274,32 +274,45 @@
     async function syncDataFromRemote() {
         if (!sgfConfig.api_url || !sgfConfig.cloud_access) return;
 
-        // Des-invertir llave para consumo propio
         const realKey = sgfConfig.cloud_access.split('').reverse().join('');
         const statusInd = document.getElementById('sync-status');
         
         try {
             const response = await fetch(sgfConfig.api_url, {
-                headers: { "Authorization": `Bearer ${realKey}`, "Cache-Control": "no-cache" }
+                headers: { 
+                    "Authorization": `Bearer ${realKey}`, 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Cache-Control": "no-cache" 
+                }
             });
             
             if (response.ok) {
                 const data = await response.json();
                 currentSha = data.sha;
-                const cloudState = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                 
-                // Actualiza caché local con la info bajada de la nube (donde Aura escribió)
+                // CRÍTICO: GitHub devuelve Base64 con saltos de línea (\n). Hay que quitarlos o atob falla.
+                const cleanBase64 = data.content.replace(/\s/g, ''); 
+                const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
+                
                 sgfConfig.usuarios = cloudState.usuarios || [];
                 sgfConfig.ordenes = cloudState.ordenes || [];
                 
                 saveDB();
                 statusInd.className = 'status-online';
-                statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
+                statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
+            
+            } else if (response.status === 404) {
+                // El archivo aún no existe en GitHub. Está bien, el Master lo creará en el próximo Push.
+                statusInd.className = 'status-warning';
+                statusInd.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Archivo Nuevo (Listo para Push)';
+                currentSha = null;
+            } else {
+                throw new Error(`Error HTTP: ${response.status}`);
             }
         } catch (error) {
-            console.warn("Fallo de lectura en segundo plano", error);
+            console.error("Fallo de lectura en segundo plano", error);
             statusInd.className = 'status-offline';
-            statusInd.innerHTML = '<i class="fa-solid fa-cloud-xmark"></i> Sin Conexión';
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync (${error.message})`;
         }
     }
 
@@ -330,26 +343,47 @@
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
         try {
-            // Obtenemos SHA fresco por si Aura escribió entre nuestro último poll y ahora
+            // Re-Verificación de SHA (Para evitar conflictos si alguien escribió hace 1 segundo)
             let actualSha = currentSha;
-            const getReq = await fetch(sgfConfig.api_url, { headers: { "Authorization": `Bearer ${realKey}` } });
-            if(getReq.ok) { const fd = await getReq.json(); actualSha = fd.sha; }
+            try {
+                const getReq = await fetch(sgfConfig.api_url, { 
+                    headers: { "Authorization": `Bearer ${realKey}`, "Accept": "application/vnd.github.v3+json" } 
+                });
+                if(getReq.ok) { 
+                    const fd = await getReq.json(); actualSha = fd.sha; 
+                } else if (getReq.status === 404) {
+                    actualSha = null; // No hay SHA porque vamos a crear el archivo
+                }
+            } catch(e) {}
+
+            const bodyData = {
+                message: "SGF Master: Update Central State",
+                content: payloadBase64
+            };
+            if (actualSha) bodyData.sha = actualSha;
 
             const putReq = await fetch(sgfConfig.api_url, {
                 method: "PUT",
-                headers: { "Authorization": `Bearer ${realKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "SGF Master: Update State", content: payloadBase64, sha: actualSha })
+                headers: { 
+                    "Authorization": `Bearer ${realKey}`, 
+                    "Accept": "application/vnd.github.v3+json",
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify(bodyData)
             });
 
-            if(!putReq.ok) throw new Error("La API rechazó el push.");
-            const putRes = await putReq.json();
-            currentSha = putRes.content.sha; // Actualizar SHA
+            if(!putReq.ok) throw new Error(`HTTP ${putReq.status}`);
             
-            if(!silent) showToast("Base de datos central actualizada.", "success");
+            const putRes = await putReq.json();
+            currentSha = putRes.content.sha; // Actualizar SHA tras escribir
+            
+            if(!silent) showToast("Base de datos central actualizada y sincronizada.", "success");
+            document.getElementById('sync-status').className = 'status-online';
+            document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
 
         } catch (error) {
-            console.error(error);
-            if(!silent) showToast("Fallo al escribir en la nube.", "error");
+            console.error("Error al escribir:", error);
+            if(!silent) showToast(`Fallo al escribir en la nube: ${error.message}`, "error");
         }
     }
 
@@ -367,14 +401,13 @@
         const token = document.getElementById('cfg_token').value.trim();
         if(!url || !token) return showToast("Complete URL y Token.", "error");
 
-        // Inversión de Token para protección en JSON
         sgfConfig.api_url = url;
         sgfConfig.cloud_access = token.split('').reverse().join('');
         
         saveDB();
         closeModal('modalConfig');
-        showToast("Canal enlazado. Inicializando sincronización...", "success");
-        syncDataFromRemote(); // Hacemos un primer poll para jalar los datos existentes
+        showToast("Canal enlazado. Inicializando conexión...", "success");
+        syncDataFromRemote(); 
     }
 
     /* =====================================================================
@@ -405,7 +438,7 @@
         sgfConfig.usuarios.forEach((u) => {
             if(u.u === 'admin') return;
             const estadoTkn = calcularEstado(u.t);
-            // El Portal se marca "AUDITANDO". Si lo vemos, lo resaltamos.
+            // Si Aura subió el pago, el Portal se marca "AUDITANDO". El Master lo detecta aquí.
             let portalStatus = (u.estado === "AUDITANDO" || u.estado === "PENDIENTE") ? 
                 `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
                 `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
