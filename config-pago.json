@@ -1,24 +1,16 @@
 {
-    "cloud_access": "2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg",
-    "usuarios": [
-        {
-            "u": "admin",
-            "p": "admin",
-            "n": "Sistema Central",
-            "t": "E-ROOT-SYS-MjA5OTEyMzE=-MASTERKEY"
-        },
-        {
-            "u": "admin",
-            "p": "admin",
-            "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
-            "estado": "LIBRE"
-        },
-        {
-            "u": "admin",
-            "p": "admin",
-            "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
-            "estado": "LIBRE"
-        }
-    ],
-    "ordenes": []
+  "config": {
+    "fecha_actualizacion": "2026-04-03",
+    "version": "1.0"
+  },
+  "usuarios": [
+    {
+      "user": "admin",
+      "pass": "admin",
+      "id": "001",
+      "vencimiento": "2027-01-01",
+      "licencia": "SGF-MASTER-INIT",
+      "estado": "ACTIVO"
+    }
+  ]
 }
