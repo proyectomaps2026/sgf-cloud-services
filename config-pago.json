@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "ultima_sincronizacion": "2026-04-03T12:00:00Z",
+    "version_db": "2.0.0"
+  },
+  "usuarios": [
+    {
+      "u": "admin",
+      "p": "admin",
+      "n": "Terminal Central",
+      "id_nodo": "MASTER-00",
+      "t": "E-INIT-0000-BASE64-SEED",
+      "v": "2099-12-31",
+      "estado_portal": "LIBRE"
+    },
+    {
+      "u": "aura",
+      "p": "aura",
+      "n": "Terminal Aura-2026",
+      "id_nodo": "AURA-01",
+      "t": "---",
+      "v": "VENCIDA",
+      "estado_portal": "LIBRE" 
+    }
+  ],
+  "bandeja_entrada": [
+    {
+      "id_orden": "ORD-84729",
+      "usuario": "alcaldia",
+      "tipo_tramite": "RENOVAR LICENCIA VENCIDA",
+      "metodo": "Pago Móvil",
+      "referencia": "123456789",
+      "capture_url": "https://res.cloudinary.com/tu_usuario/image/upload/v1/pagos/capture_123.jpg",
+      "fecha_solicitud": "2026-04-03T10:30:00Z",
+      "status": "PENDIENTE"
+    }
+  ]
+}
