@@ -4,12 +4,22 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-05-03",
             "u": "alcaldia",
             "p": "admin",
             "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
-    "ordenes": []
+    "ordenes": [
+        {
+            "id": "ORD-680654",
+            "usuario": "alcaldia",
+            "tramite": "Renovar Licencia Vencida",
+            "metodo": "acuerdo",
+            "referencia": "N/A",
+            "fecha": "2026-04-03T21:05:05.925Z",
+            "estado": "Pendiente"
+        }
+    ]
 }
