@@ -4,7 +4,7 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-07-02",
             "u": "alcaldia",
             "p": "admin",
@@ -37,6 +37,15 @@
             "metodo": "acuerdo",
             "referencia": "N/A",
             "fecha": "2026-04-03T21:13:28.121Z",
+            "estado": "Pendiente"
+        },
+        {
+            "id": "ORD-955521",
+            "usuario": "alcaldia",
+            "tramite": "Actualizar Servicio Activo",
+            "metodo": "acuerdo",
+            "referencia": "N/A",
+            "fecha": "2026-04-03T21:14:10.472Z",
             "estado": "Pendiente"
         }
     ]
