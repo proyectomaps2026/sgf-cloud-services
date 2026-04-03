@@ -79,7 +79,6 @@
         .toast-info { background: var(--info); color: #000; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Visor de Comprobantes */
         .img-container { position: relative; display: inline-block; }
         .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
         .img-container:hover .img-thumb { border-color: var(--primary); }
@@ -221,10 +220,10 @@
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA
        ===================================================================== */
+    // URL Fija requerida
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
     const dbKey = 'sgf_master_db_v26'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
-    let currentSha = null; // SELLO DE VERSIÓN GLOBAL
 
     function loadDB() {
         try {
@@ -255,29 +254,23 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       PASO 1: CARGA INICIAL (LECTURA GET) - EL PUENTE DE MANDO
+       CONEXIÓN SIMPLE Y DIRECTA (LECTURA)
        ===================================================================== */
     async function cargarDatosNube() {
-        const btn = document.getElementById('btn-force-sync');
         const semillaRevertida = localStorage.getItem('semilla_revert');
         if (!semillaRevertida) return;
 
         const realKey = semillaRevertida.split('').reverse().join('');
         const statusInd = document.getElementById('sync-status');
         
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
-        btn.style.color = '#fff';
-
         try {
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+                headers: { "Authorization": "token " + realKey }
             });
             
             if (response.ok) {
                 const data = await response.json();
-                currentSha = data.sha; // GUARDAMOS EL SHA VIGENTE
-                
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
                 const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
                 
@@ -288,21 +281,21 @@
                 
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
+            } else {
+                statusInd.className = 'status-warning';
+                statusInd.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al Leer';
             }
         } catch (error) {
             statusInd.className = 'status-offline';
             statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
         }
-
-        // Restaurar botón
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
     }
 
     // Auto-Polling
     setInterval(cargarDatosNube, 15000);
 
     /* =====================================================================
-       PASO 2 y 3: BLINDAJE DEL ENVÍO (ESCRITURA PUT CON SHA Y RESCATE)
+       CONEXIÓN SIMPLE Y DIRECTA (ESCRITURA)
        ===================================================================== */
     async function sincronizarConNube() {
         const btn = document.getElementById('btn-force-sync');
@@ -313,9 +306,9 @@
             return;
         }
 
-        // Feedback Visual Activado
+        // Feedback Visual
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Escribiendo...';
-        btn.style.backgroundColor = '#f57c00'; // Naranja Processing
+        btn.style.backgroundColor = '#f57c00';
         btn.style.color = '#fff';
 
         const realKey = semillaRevertida.split('').reverse().join('');
@@ -325,6 +318,7 @@
              sgfConfig.usuarios.unshift({ user: 'admin', u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`, estado: "LIBRE" });
         }
 
+        // Empaquetado
         const payloadToUpload = {
             cloud_access: semillaRevertida,
             usuarios: sgfConfig.usuarios,
@@ -333,26 +327,26 @@
 
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
 
-        // RESCATE TÁCTICO: Si perdimos el SHA, forzamos un GET rápido antes de lanzar el PUT.
-        if (!currentSha) {
-            try {
-                const getReq = await fetch(GITHUB_API_URL, {
-                    method: "GET",
-                    headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
-                });
-                if (getReq.ok) {
-                    const getRes = await getReq.json();
-                    currentSha = getRes.sha;
-                }
-            } catch(e) {}
-        }
+        // 1. OBTENER SHA DIRECTO
+        let fileSha = null;
+        try {
+            const getReq = await fetch(GITHUB_API_URL, {
+                method: "GET",
+                headers: { "Authorization": "token " + realKey }
+            });
+            if (getReq.ok) {
+                const getRes = await getReq.json();
+                fileSha = getRes.sha;
+            }
+        } catch(e) {}
 
+        // 2. HACER EL PUT DIRECTO
         const bodyData = {
-            message: "SGF Master: Sincronización de Base de Datos Central",
+            message: "SGF Master: Guardado Directo",
             content: payloadBase64
         };
         
-        if (currentSha) bodyData.sha = currentSha;
+        if (fileSha) bodyData.sha = fileSha;
 
         try {
             const putReq = await fetch(GITHUB_API_URL, {
@@ -365,10 +359,6 @@
             });
 
             if(putReq.ok) {
-                // Actualizar SHA con la respuesta exitosa
-                const putRes = await putReq.json();
-                currentSha = putRes.content.sha;
-
                 // Éxito: Botón Verde
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Nube Sincronizada';
                 btn.style.backgroundColor = '#00c853';
@@ -377,10 +367,9 @@
             } else {
                 // Error Analítico
                 const errData = await putReq.json();
-                alert(`Error HTTP ${putReq.status}\nMensaje de GitHub: ${errData.message}`);
+                alert(`Error GitHub HTTP ${putReq.status}\nMensaje: ${errData.message}`);
                 btn.innerHTML = `<i class="fa-solid fa-xmark"></i> Error ${putReq.status}`;
                 btn.style.backgroundColor = '#d32f2f';
-                currentSha = null; // Forzar rescate en el próximo intento
             }
         } catch (error) {
             alert(`Fallo de Red o Conexión: ${error.message}`);
@@ -388,7 +377,7 @@
             btn.style.backgroundColor = '#d32f2f';
         }
 
-        // Restaurar estado visual del botón
+        // Restaurar botón
         setTimeout(() => {
             btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
             btn.style.backgroundColor = '';
@@ -415,7 +404,6 @@
 
         (sgfConfig.usuarios || []).forEach((usr) => {
             try {
-                // Mapeo Exacto: Busca 'user' (nuevo) o 'u' (legacy)
                 const nombreUser = usr.user || usr.u || "";
                 if(!nombreUser || nombreUser === 'admin') return; 
                 
@@ -487,7 +475,6 @@
             return showToast("Este usuario ya existe.", "warning");
         }
 
-        // Estructura de Datos Exacta Requerida (Con fallback para el portal viejo)
         sgfConfig.usuarios.push({ 
             user: u, 
             id: `ID-${u.toUpperCase()}-2026`, 
@@ -503,8 +490,6 @@
         document.getElementById('n_pass').value = 'admin';
         closeModal('modalNuevo'); 
         
-        showToast("Guardado local. Sincronizando con GitHub...", "info");
-        // Auto-Sincronización al Registrar
         sincronizarConNube(); 
     }
 
