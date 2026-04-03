@@ -13,11 +13,11 @@
         {
             "user": "aura",
             "id": "ID-AURA-2026",
-            "estado": "AUDITANDO",
+            "estado": "LIBRE",
             "vencimiento": "2026-05-03",
             "u": "aura",
             "p": "aura",
-            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
+            "t": "SGF-AURA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNS0wMw"
         }
     ],
     "ordenes": [
@@ -28,7 +28,7 @@
             "metodo": "binance",
             "referencia": "77889866",
             "fecha": "2026-04-03T21:17:26.764Z",
-            "estado": "Pendiente"
+            "estado": "Aprobada"
         }
     ]
 }
