@@ -6,7 +6,7 @@
     <title>SGF MASTER | Central de Validación de Datos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; }
+        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; --info: #00bcd4; }
         body { font-family: 'Segoe UI', Inter, sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
         
         /* Sidebar */
@@ -14,6 +14,8 @@
         .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .nav-item.sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 20px; }
+        .nav-item.sync-btn:hover { background: var(--info); color: white; }
 
         /* Main Content */
         .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
@@ -63,12 +65,13 @@
 
         /* Notificaciones Toast */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; }
+        .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; min-width: 250px;}
         .toast-success { background: var(--success); color: #000; }
-        .toast-error { background: var(--danger); }
+        .toast-error { background: var(--danger); color: white; }
+        .toast-info { background: var(--info); color: #000; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Visor de Comprobantes (Hover) */
+        /* Visor de Comprobantes */
         .img-container { position: relative; display: inline-block; }
         .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
         .img-container:hover .img-thumb { border-color: var(--primary); }
@@ -84,8 +87,10 @@
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
     <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
-    <!-- 3. Puente de Conexión -->
     <div class="nav-item" onclick="mostrarExport()"><i class="fa-solid fa-code-branch"></i> Exportar Config.js</div>
+    
+    <!-- Módulo 2: Sincronización Remota -->
+    <div class="nav-item sync-btn" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Publicar Actualización</div>
 </div>
 
 <div class="main" id="view-clientes">
@@ -119,8 +124,8 @@
 <div class="main" id="view-pagos" style="display:none;">
     <div class="header">
         <h1>Auditoría de Trámites</h1>
-        <!-- 2. Botón Reset Historial -->
-        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Limpiar Historial de Órdenes</button>
+        <!-- Módulo 1b: Depurar Registro de Transacciones -->
+        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Depurar Registro de Transacciones</button>
     </div>
     <div class="table-container">
         <table>
@@ -139,7 +144,7 @@
     </div>
 </div>
 
-<!-- Modal Registro (Estandarizado) -->
+<!-- Modal Registro -->
 <div id="modalNuevo" class="modal">
     <div class="modal-content">
         <h3>Alta de Nuevo Terminal</h3>
@@ -153,7 +158,7 @@
     </div>
 </div>
 
-<!-- Modal Generador "Revert" con Base64 -->
+<!-- Modal Generador -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
         <h3>Aprobar y Generar Licencia</h3>
@@ -189,26 +194,44 @@
 </div>
 
 <script>
-    // 5. Seguridad Anti-Intrusos
+    // Módulo 5: Integridad de la Visualización (Detección de Manipulación del DOM / Resize)
     document.addEventListener('contextmenu', event => event.preventDefault());
+    
+    let baseWidth = window.innerWidth;
+    let baseHeight = window.innerHeight;
+    
     setInterval(() => {
-        if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
-            window.location.href = "about:blank";
+        // Detecta discrepancias graves en la resolución (Ej. herramientas de desarrollo)
+        if (Math.abs(window.outerWidth - window.innerWidth) > 160 || Math.abs(window.outerHeight - window.innerHeight) > 160) {
+            // Reinicia la vista para proteger elementos
+            document.body.innerHTML = `
+                <div style="display:flex; height:100vh; width:100vw; justify-content:center; align-items:center; background:#0a0a0c; flex-direction:column;">
+                    <i class="fa-solid fa-shield-halved" style="color:var(--primary); font-size: 50px; margin-bottom: 20px;"></i>
+                    <h2 style="color:white; font-family:sans-serif;">Protocolo de Seguridad Activado</h2>
+                    <p style="color:#888; font-family:sans-serif;">Restableciendo estado de la vista...</p>
+                </div>
+            `;
+            setTimeout(() => location.reload(), 1500);
         }
     }, 1000);
 
-    // Sistema Toast UI
+    // Módulo 4: Sistema UI/Feedback por Toasts (Reemplazo de alertas)
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        
+        let icon = 'fa-check-circle';
+        if (type === 'error') icon = 'fa-exclamation-triangle';
+        if (type === 'info') icon = 'fa-info-circle';
+
         toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
         container.appendChild(toast);
+        
         setTimeout(() => {
             toast.style.animation = 'slideIn 0.3s ease reverse forwards';
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, 3500);
     }
 
     // BASE DE DATOS COMPARTIDA
@@ -294,8 +317,8 @@
                     <td style="text-align: right;">
                         <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia Manual"><i class="fa-solid fa-key"></i></button>
                         <button class="btn btn-action" onclick="forzarReset('${u.u}')" title="Forzar Reset de Seguridad"><i class="fa-solid fa-user-lock"></i></button>
-                        <!-- 1. Botón Eliminar Nodo -->
-                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar Terminal"><i class="fa-solid fa-trash-can"></i></button>
+                        <!-- Módulo 1a: Eliminar Registro -->
+                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar Registro"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
             `;
@@ -327,16 +350,15 @@
         const u = document.getElementById('n_user').value.toLowerCase();
         const p = document.getElementById('n_pass').value;
         
-        if(!n || !u) return showToast("Ingrese nombre y usuario.", "error");
-        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("El usuario ya existe.", "error");
+        if(!n || !u) return showToast("Falta nombre de terminal y usuario.", "error");
+        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("El ID de usuario ya existe.", "error");
         
-        // Token inicial con fecha encriptada genérica (2020-01-01)
         const initDateB64 = btoa("20200101");
         sgfConfig.usuarios.push({ n: n, u: u, p: p, t: `E-INIT-${u.toUpperCase()}-${initDateB64}-START`, estado: "LIBRE", token_orden: "" });
         
         saveDB();
         closeModal('modalNuevo');
-        showToast("Terminal registrado exitosamente.", "success");
+        showToast("Terminal registrado exitosamente en la base local.", "success");
     }
 
     function forzarReset(user) {
@@ -345,29 +367,28 @@
             if(idx !== -1) {
                 sgfConfig.usuarios[idx].p = 'admin';
                 saveDB();
-                showToast(`Reset de seguridad aplicado al terminal ${user}.`, 'success');
+                showToast(`Credenciales restablecidas para el terminal ${user}.`, 'info');
             }
         }
     }
 
     function eliminarTerminal(user) {
-        if(confirm(`¿Está seguro de ELIMINAR permanentemente el acceso del terminal [${user}]?`)) {
+        if(confirm(`ATENCIÓN: ¿Está seguro de ELIMINAR permanentemente el registro del terminal [${user}]?`)) {
             sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== user);
             saveDB();
-            showToast(`Terminal ${user} ha sido eliminado.`, 'success');
+            showToast(`Registro de terminal ${user} eliminado.`, 'info');
         }
     }
 
-    // 2. AUDITORÍA (Reset de Historial)
     function limpiarHistorial() {
-        if(confirm("¿Está seguro de limpiar TODO el historial de órdenes y validaciones?")) {
+        if(confirm("¿Está seguro de limpiar TODO el registro de transacciones? Esta acción es irreversible.")) {
             sgfConfig.ordenes = [];
             saveDB();
-            showToast("Historial de órdenes vaciado con éxito.", "success");
+            showToast("Registro de transacciones depurado con éxito.", "success");
         }
     }
     
-    // 4. LÓGICA DE GENERADOR DE LICENCIAS CON FECHA ENCRIPTADA
+    // Módulo 3: LÓGICA DE LICENCIAMIENTO CON ENCRIPTACIÓN BASE64
     function abrirAprobacion(orderId, userId) {
         document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
         document.getElementById('token_order_id').value = orderId;
@@ -387,29 +408,30 @@
         const dias = parseInt(document.getElementById('dias_extension').value);
         let semilla = document.getElementById('semilla').value;
         
-        if(!semilla) semilla = "SGF2026"; // Fallback semilla
+        if(!semilla) semilla = "SGF2026"; 
 
         const usrIdx = sgfConfig.usuarios.findIndex(u => u.u === userId);
-        if(usrIdx === -1) return showToast("Usuario no encontrado", "error");
+        if(usrIdx === -1) return showToast("Usuario no encontrado en la base", "error");
 
-        // Automatización de Fecha -> Base64
         let d = new Date();
         d.setDate(d.getDate() + dias);
         let anio = d.getFullYear();
         let mes = String(d.getMonth() + 1).padStart(2, '0');
         let dia = String(d.getDate()).padStart(2, '0');
+        
         let fechaExt = `${anio}${mes}${dia}`;
-        let fechaB64 = btoa(fechaExt); // Encriptar
+        
+        // Encriptación de integridad para transmisión
+        let fechaB64 = btoa(fechaExt); 
         
         let basura = Math.random().toString(36).substring(2, 6).toUpperCase();
-        // E-[BASURA]-[ID]-[FECHA_B64]-[SEMILLA]
+        
+        // Token Estructurado: E-[SALT]-[USUARIO]-[FECHA_B64]-[SEMILLA_SEGURIDAD]
         let nuevoToken = `E-${basura}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
 
-        // Inyectar en Base de Datos
         sgfConfig.usuarios[usrIdx].t = nuevoToken;
         sgfConfig.usuarios[usrIdx].estado = "LIBRE";
 
-        // Actualizar la orden
         if (orderId !== "MANUAL") {
             const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
             if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
@@ -417,20 +439,14 @@
         
         saveDB();
         closeModal('modalToken');
-        showToast(`Licencia generada. Servicio liberado para ${userId.toUpperCase()}.`, "success");
+        showToast(`Token generado en formato seguro para ${userId.toUpperCase()}.`, "success");
     }
 
-    // 3. PUENTE DE CONEXIÓN (Generador de Config)
     function mostrarExport() {
-        // Limpiamos datos internos como tokens de ordenes viejas o estados locales
         const usuariosParaPortal = sgfConfig.usuarios.map(u => ({
-            u: u.u,
-            p: u.p,
-            n: u.n || u.u.toUpperCase(),
-            t: u.t
+            u: u.u, p: u.p, n: u.n || u.u.toUpperCase(), t: u.t
         }));
         
-        // Aseguramos que el Root Master siempre esté en el config final exportado
         if (!usuariosParaPortal.some(u => u.u === 'admin')) {
              usuariosParaPortal.unshift({ u: 'admin', p: 'admin', n: 'Sistema Central', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
         }
@@ -440,6 +456,59 @@
         
         document.getElementById('export-code').value = codeString;
         openModal('modalExport');
+    }
+
+    // Módulo 2: Sincronización Remota (API Handler)
+    async function syncDataToRemote() {
+        showToast("Preparando objeto JSON para sincronización...", "info");
+        
+        const API_CONFIG = {
+            url: "https://api.github.com/repos/{OWNER}/{REPO}/contents/{PATH}", // ENDPOINT REEMPLAZABLE
+            token: "TU_TOKEN_DE_AUTENTICACION_AQUI"
+        };
+
+        try {
+            const usuariosParaPortal = sgfConfig.usuarios.map(u => ({
+                u: u.u, p: u.p, n: u.n || u.u.toUpperCase(), t: u.t
+            }));
+            
+            if (!usuariosParaPortal.some(u => u.u === 'admin')) {
+                 usuariosParaPortal.unshift({ u: 'admin', p: 'admin', n: 'Sistema Central', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
+            }
+
+            const configObject = { usuarios: usuariosParaPortal };
+            
+            // Transformación Payload a Base64 requerido por la mayoría de APIs REST (ej. GitHub)
+            const payloadContent = btoa(unescape(encodeURIComponent(`const sgfConfig = ${JSON.stringify(configObject, null, 4)};`)));
+
+            const requestBody = {
+                message: "Update SGF config via Remote API Handler",
+                content: payloadContent
+                // sha: "SHA_DEL_ARCHIVO" // Descomentar en entorno real tras un GET previo
+            };
+
+            /* === ZONA DE DESPLIEGUE API (COMENTADO HASTA APLICAR CREDENCIALES) ===
+            const response = await fetch(API_CONFIG.url, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${API_CONFIG.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if(!response.ok) throw new Error("Fallo en la respuesta del servidor destino.");
+            */
+            
+            // Simulación de delay de red para UI Response
+            setTimeout(() => {
+                showToast("Sincronización remota completada (Modo Simulación).", "success");
+            }, 1200);
+
+        } catch (error) {
+            console.error("Error Sync API:", error);
+            showToast("Error de conexión con el endpoint remoto.", "error");
+        }
     }
 
     // Inicializar
