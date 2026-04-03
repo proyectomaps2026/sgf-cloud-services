@@ -432,10 +432,7 @@
     }
 
     function cerrarConfiguracion() {
-        if (currentUser && currentUser.u === 'admin' && currentUser.p === 'admin') {
-            showToast("Debe establecer credenciales privadas por seguridad.", "error");
-            return;
-        }
+        // Simplemente oculta el div, permitiendo volver al menú sin validar nada más
         document.getElementById('force-reset').style.display = 'none';
     }
 
