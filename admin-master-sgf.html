@@ -79,6 +79,7 @@
         .toast-info { background: var(--info); color: #000; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
+        /* Visor de Comprobantes */
         .img-container { position: relative; display: inline-block; }
         .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
         .img-container:hover .img-thumb { border-color: var(--primary); }
@@ -101,7 +102,7 @@
     <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configurar Llave (GitHub)</div>
     
     <!-- BOTÓN RESCATE (LANZALLAMAS) -->
-    <div class="nav-item sync-btn" id="btn-force-sync" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
+    <div class="nav-item sync-btn" id="btn-force-sync" onclick="sincronizarConNube()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
 </div>
 
 <div class="main" id="view-clientes">
@@ -220,10 +221,10 @@
     /* =====================================================================
        VARIABLES GLOBALES Y MEMORIA
        ===================================================================== */
-    // URL Fija requerida
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
-    const dbKey = 'sgf_master_db_v25'; 
+    const dbKey = 'sgf_master_db_v26'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
+    let currentSha = null; // SELLO DE VERSIÓN GLOBAL
 
     function loadDB() {
         try {
@@ -238,7 +239,7 @@
 
     function saveDB() {
         localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
-        renderNodos();
+        renderTable();
         renderHistorial();
     }
 
@@ -247,16 +248,63 @@
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('view-' + tab).style.display = 'block';
         document.getElementById('nav-' + tab).classList.add('active');
-        renderNodos(); renderHistorial();
+        renderTable(); renderHistorial();
     }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       PASO 2 y 3: PUENTE DE MANDO Y BOTÓN RESCATE (FORZAR ESCRITURA)
+       PASO 1: CARGA INICIAL (LECTURA GET) - EL PUENTE DE MANDO
        ===================================================================== */
-    async function syncDataToRemote() {
+    async function cargarDatosNube() {
+        const btn = document.getElementById('btn-force-sync');
+        const semillaRevertida = localStorage.getItem('semilla_revert');
+        if (!semillaRevertida) return;
+
+        const realKey = semillaRevertida.split('').reverse().join('');
+        const statusInd = document.getElementById('sync-status');
+        
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.style.color = '#fff';
+
+        try {
+            const response = await fetch(GITHUB_API_URL, {
+                method: "GET",
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                currentSha = data.sha; // GUARDAMOS EL SHA VIGENTE
+                
+                const cleanBase64 = data.content.replace(/\s/g, ''); 
+                const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
+                
+                sgfConfig.usuarios = Array.isArray(cloudState.usuarios) ? cloudState.usuarios : [];
+                sgfConfig.ordenes = Array.isArray(cloudState.ordenes) ? cloudState.ordenes : [];
+                
+                saveDB();
+                
+                statusInd.className = 'status-online';
+                statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
+            }
+        } catch (error) {
+            statusInd.className = 'status-offline';
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
+        }
+
+        // Restaurar botón
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
+    }
+
+    // Auto-Polling
+    setInterval(cargarDatosNube, 15000);
+
+    /* =====================================================================
+       PASO 2 y 3: BLINDAJE DEL ENVÍO (ESCRITURA PUT CON SHA Y RESCATE)
+       ===================================================================== */
+    async function sincronizarConNube() {
         const btn = document.getElementById('btn-force-sync');
         const semillaRevertida = localStorage.getItem('semilla_revert');
         
@@ -266,11 +314,10 @@
         }
 
         // Feedback Visual Activado
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Escribiendo...';
         btn.style.backgroundColor = '#f57c00'; // Naranja Processing
         btn.style.color = '#fff';
 
-        // Lógica Revert: Le damos la vuelta a la llave para usarla
         const realKey = semillaRevertida.split('').reverse().join('');
         
         // Garantizar usuario root
@@ -278,7 +325,6 @@
              sgfConfig.usuarios.unshift({ user: 'admin', u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`, estado: "LIBRE" });
         }
 
-        // Empaquetado del Payload inyectando la llave invertida (cloud_access)
         const payloadToUpload = {
             cloud_access: semillaRevertida,
             usuarios: sgfConfig.usuarios,
@@ -286,28 +332,28 @@
         };
 
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
-        let fileSha = null;
 
-        // Intentar obtener el SHA (Si falla, el flujo sigue para forzar creación)
-        try {
-            const getReq = await fetch(GITHUB_API_URL, {
-                method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
-            });
-            if (getReq.ok) {
-                const getRes = await getReq.json();
-                fileSha = getRes.sha;
-            }
-        } catch(e) {}
+        // RESCATE TÁCTICO: Si perdimos el SHA, forzamos un GET rápido antes de lanzar el PUT.
+        if (!currentSha) {
+            try {
+                const getReq = await fetch(GITHUB_API_URL, {
+                    method: "GET",
+                    headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+                });
+                if (getReq.ok) {
+                    const getRes = await getReq.json();
+                    currentSha = getRes.sha;
+                }
+            } catch(e) {}
+        }
 
         const bodyData = {
-            message: "SGF Master: Guardado Directo",
+            message: "SGF Master: Sincronización de Base de Datos Central",
             content: payloadBase64
         };
         
-        if (fileSha) bodyData.sha = fileSha;
+        if (currentSha) bodyData.sha = currentSha;
 
-        // Disparo Final a la API (Ignorando errores previos)
         try {
             const putReq = await fetch(GITHUB_API_URL, {
                 method: "PUT",
@@ -319,76 +365,47 @@
             });
 
             if(putReq.ok) {
+                // Actualizar SHA con la respuesta exitosa
+                const putRes = await putReq.json();
+                currentSha = putRes.content.sha;
+
                 // Éxito: Botón Verde
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Nube Sincronizada';
                 btn.style.backgroundColor = '#00c853';
                 document.getElementById('sync-status').className = 'status-online';
                 document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
             } else {
-                // Error de GitHub (Ej. 401: Llave Inválida, 422: Conflicto SHA)
+                // Error Analítico
                 const errData = await putReq.json();
                 alert(`Error HTTP ${putReq.status}\nMensaje de GitHub: ${errData.message}`);
                 btn.innerHTML = `<i class="fa-solid fa-xmark"></i> Error ${putReq.status}`;
                 btn.style.backgroundColor = '#d32f2f';
+                currentSha = null; // Forzar rescate en el próximo intento
             }
         } catch (error) {
-            // Error de Red o CORS
             alert(`Fallo de Red o Conexión: ${error.message}`);
             btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Fallo Red';
             btn.style.backgroundColor = '#d32f2f';
         }
 
-        // Restaurar estado visual del botón tras 3 segundos
+        // Restaurar estado visual del botón
         setTimeout(() => {
             btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
             btn.style.backgroundColor = '';
         }, 3000);
     }
 
-    // Tarea de Lectura de Fondo
-    async function syncDataFromRemote() {
-        const semillaRevertida = localStorage.getItem('semilla_revert');
-        if (!semillaRevertida) return;
-
-        const realKey = semillaRevertida.split('').reverse().join('');
-        const statusInd = document.getElementById('sync-status');
-        
-        try {
-            const response = await fetch(GITHUB_API_URL, {
-                method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const cleanBase64 = data.content.replace(/\s/g, ''); 
-                const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
-                
-                sgfConfig.usuarios = Array.isArray(cloudState.usuarios) ? cloudState.usuarios : [];
-                sgfConfig.ordenes = Array.isArray(cloudState.ordenes) ? cloudState.ordenes : [];
-                saveDB();
-                
-                statusInd.className = 'status-online';
-                statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
-            }
-        } catch (error) {}
-    }
-
-    setInterval(syncDataFromRemote, 15000);
 
     /* =====================================================================
-       PASO 1: EL DATA MAPPING (MAPA DE DATOS EXACTO EN LA TABLA)
+       EL DATA MAPPING (MAPA DE DATOS EXACTO EN LA TABLA)
        ===================================================================== */
-    
-    // Función de apoyo para extraer la fecha si es necesario
     function decodificarFecha(token) {
         if (!token) return null;
         try { const partes = token.split('-'); if (partes.length >= 4) return atob(partes[3]); } catch(e) {}
         return null;
     }
 
-    // Renderizado seguro que crea las filas `<tr>` buscando los nombres exactos
-    function renderNodos() {
+    function renderTable() {
         const list = document.getElementById('listaNodos');
         list.innerHTML = "";
         
@@ -398,28 +415,24 @@
 
         (sgfConfig.usuarios || []).forEach((usr) => {
             try {
-                // Buscamos los datos con los nombres exactos (con fallback por si acaso)
+                // Mapeo Exacto: Busca 'user' (nuevo) o 'u' (legacy)
                 const nombreUser = usr.user || usr.u || "";
                 if(!nombreUser || nombreUser === 'admin') return; 
                 
                 count++;
                 const idUser = usr.id || `ID-${nombreUser.toUpperCase()}-2026`;
                 const estadoUser = usr.estado || "LIBRE";
-                // Toma vencimiento directo o lo intenta sacar del token
                 let vencimientoUser = usr.vencimiento || decodificarFecha(usr.t) || "2026-12-31";
 
-                // Diseño visual del estado
                 let portalStatus = (estadoUser === "AUDITANDO" || estadoUser === "PENDIENTE") ? 
                     `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
                     (estadoUser === "LIBRE" ? `<span class="status-pill status-active">LIBRE</span>` : `<span class="status-pill badge-normal">${estadoUser}</span>`);
                 
-                // Formateo de fecha visual si es YYYYMMDD
                 let fechaMostrada = vencimientoUser;
                 if(vencimientoUser.length === 8 && !vencimientoUser.includes('-')) {
                     fechaMostrada = `${vencimientoUser.substring(6,8)}/${vencimientoUser.substring(4,6)}/${vencimientoUser.substring(0,4)}`;
                 }
 
-                // Generación de la Fila (<tr>)
                 list.innerHTML += `
                     <tr>
                         <td><b style="color:white; font-size:14px;">${nombreUser.toUpperCase()}</b></td>
@@ -432,9 +445,7 @@
                         </td>
                     </tr>
                 `;
-            } catch(e) {
-                console.error("Fila omitida por error de estructura de datos:", e);
-            }
+            } catch(e) {}
         });
 
         document.getElementById('statTotal').innerText = count;
@@ -476,15 +487,15 @@
             return showToast("Este usuario ya existe.", "warning");
         }
 
-        // Estructura de Datos Exacta Requerida (Con fallback para el portal)
+        // Estructura de Datos Exacta Requerida (Con fallback para el portal viejo)
         sgfConfig.usuarios.push({ 
             user: u, 
             id: `ID-${u.toUpperCase()}-2026`, 
             estado: "LIBRE", 
             vencimiento: "2026-12-31",
-            u: u, // Fallback Portal
+            u: u, 
             p: p || 'admin', 
-            t: `E-INIT-${u.toUpperCase()}-${btoa("20261231")}-START` // Fallback Portal
+            t: `E-INIT-${u.toUpperCase()}-${btoa("20261231")}-START` 
         });
 
         saveDB(); 
@@ -492,20 +503,22 @@
         document.getElementById('n_pass').value = 'admin';
         closeModal('modalNuevo'); 
         
-        syncDataToRemote(); // Lanza actualización automática
+        showToast("Guardado local. Sincronizando con GitHub...", "info");
+        // Auto-Sincronización al Registrar
+        sincronizarConNube(); 
     }
 
     function eliminarTerminal(userName) {
         if(confirm(`¿ELIMINAR a [${userName}] de la Nube?`)) {
             sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== userName && u.user !== userName);
-            saveDB(); syncDataToRemote();
+            saveDB(); sincronizarConNube();
         }
     }
 
     function limpiarHistorial() {
         if(confirm("¿Vaciar registro de transacciones?")) {
             sgfConfig.ordenes = [];
-            saveDB(); syncDataToRemote();
+            saveDB(); sincronizarConNube();
         }
     }
 
@@ -535,7 +548,6 @@
         let fechaB64 = btoa(`${year}${month}${day}`); 
         let fechaLegible = `${year}-${month}-${day}`;
         
-        // Actualizamos los campos
         sgfConfig.usuarios[usrIdx].estado = "LIBRE";
         sgfConfig.usuarios[usrIdx].vencimiento = fechaLegible;
         sgfConfig.usuarios[usrIdx].t = `E-${Math.random().toString(36).substring(2,6).toUpperCase()}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
@@ -546,7 +558,7 @@
         }
         
         saveDB(); closeModal('modalToken');
-        syncDataToRemote(); 
+        sincronizarConNube(); 
     }
 
     function abrirConfigCanal() {
@@ -568,11 +580,13 @@
         
         closeModal('modalConfig');
         showToast("Llave guardada. Inicializando...", "success");
-        syncDataFromRemote(); 
+        cargarDatosNube(); 
     }
 
-    loadDB(); showTab('clientes');
-    syncDataFromRemote();
+    // Inicialización de Arranque
+    loadDB(); 
+    showTab('clientes');
+    cargarDatosNube();
 </script>
 </body>
 </html>
