@@ -217,7 +217,7 @@
                 <div id="verifying-display">
                     <i class="fa-solid fa-cloud-arrow-up fa-bounce" style="font-size: 40px; color: var(--blue-pro); margin-bottom: 15px;"></i>
                     <h3 style="color:var(--primary); margin:0 0 10px 0;">SGF CLOUD</h3>
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">PROCESANDO VALIDACIÓN...<br>Espere la liberación del servicio.</p>
+                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">Su solicitud está siendo verificada por la División de Hacienda. Espere confirmación.</p>
                 </div>
             </div>
         </div>
@@ -225,20 +225,25 @@
 </div>
 
 <script>
-    // Seguridad Anti-Sources
+    // Configuración API Centralizada (Debe apuntar a tu repo donde el Master actualiza)
+    const CONFIG_API_URL = "https://api.github.com/repos/TU_USUARIO/TU_REPO/contents/config-pago.json";
+    let currentFileSha = ""; // Guarda el SHA dinámico de GitHub
+
+    // Seguridad Anti-Sources - Blindaje de Interfaz
     document.addEventListener('contextmenu', event => event.preventDefault());
     
     const threshold = 160;
     setInterval(() => {
         if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
-            window.location.href = "about:blank";
+            document.body.innerHTML = '';
+            document.body.style.backgroundColor = '#000';
         }
     }, 1000);
 
     window.addEventListener('keydown', (e) => {
-        if (e.keyCode == 123) { e.preventDefault(); return false; }
-        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { e.preventDefault(); return false; }
-        if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
+        if (e.keyCode == 123) { e.preventDefault(); document.body.innerHTML = ''; return false; }
+        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { e.preventDefault(); document.body.innerHTML = ''; return false; }
+        if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); document.body.innerHTML = ''; return false; }
     });
 
     // Sistema Toast UI
@@ -268,7 +273,7 @@
         }
     }
 
-    // BASE DE DATOS
+    // BASE DE DATOS Y LECTURA DINÁMICA (Cloud Check)
     const dbKey = 'sgf_cloud_db_v12';
     let defaultData = {
         usuarios: [
@@ -295,10 +300,39 @@
     let selectedTramite = "";
     let isLicenseActive = false;
 
+    // Función para obtener la configuración real de GitHub en tiempo real
+    async function fetchRemoteConfig() {
+        try {
+            const response = await fetch(CONFIG_API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                currentFileSha = data.sha;
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                sgfConfig = JSON.parse(decodedContent);
+                saveDB(); // Mantenemos caché local
+                
+                // Si el usuario está activo en la sesión, actualizamos su estado
+                if (currentUser) {
+                    const updatedUser = sgfConfig.usuarios.find(u => u.u === currentUser.u);
+                    if (updatedUser) {
+                        currentUser = updatedUser;
+                        verificarEstadoAuditoria();
+                        procesarLicencia();
+                    }
+                }
+            }
+        } catch(e) { console.error("Error obteniendo datos de la nube", e); }
+    }
+
+    // Iniciar verificación automática cada 30 segundos
+    fetchRemoteConfig();
+    setInterval(fetchRemoteConfig, 30000);
+
     function validarLogin() {
         const user = document.getElementById('ui').value;
         const pass = document.getElementById('pi').value;
 
+        // Valida contra el JSON descargado de GitHub
         const foundUser = sgfConfig.usuarios.find(usr => usr.u === user && usr.p === pass);
 
         if (foundUser) {
@@ -328,7 +362,8 @@
 
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
-            const f = partes[3];
+            // Decodificador de Licencia Base64
+            const f = atob(partes[3]);
             const anio = f.substring(0,4); const mes = f.substring(4,6); const dia = f.substring(6,8);
             const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
             const hoy = new Date();
@@ -346,7 +381,7 @@
                 border.style.borderTop = "4px solid var(--accent)";
             } else {
                 ind.className = "status-pill vencido";
-                ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>BLOQUEADO';
+                ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
                 border.style.borderTop = "4px solid var(--danger)";
             }
 
@@ -364,7 +399,8 @@
     }
 
     function verificarEstadoAuditoria() {
-        if (currentUser && currentUser.estado === "PENDIENTE") {
+        // Módulo de Bloqueo por Estado
+        if (currentUser && (currentUser.estado === "AUDITANDO" || currentUser.estado === "PENDIENTE")) {
             document.getElementById('form-inner').style.display = 'none';
             document.getElementById('verifying-display').style.display = 'block';
         } else {
@@ -409,7 +445,6 @@
         document.getElementById('force-reset').style.display = 'flex';
     }
 
-    // Funcionalidad de retorno directo sin validación para ocultar el div
     function cerrarConfiguracion() {
         document.getElementById('force-reset').style.display = 'none';
     }
@@ -454,11 +489,26 @@
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
 
         if(!r && pago !== "acuerdo") { showToast("Indique la referencia o comprobante del pago.", "error"); return; }
+        
+        if (!sgfConfig.cloud_access) { showToast("Error de comunicación. Contacte al administrador.", "error"); return; }
 
+        // Sube la imagen a Cloudinary (Esperar a que termine)
+        if(f) {
+            showToast("Cargando comprobante...", "info");
+            const fd = new FormData();
+            fd.append('file', f);
+            fd.append('upload_preset', 'ordenes'); // Asegúrate que en Cloudinary tienes un upload_preset unsigned llamado "ordenes"
+            fd.append('public_id', `pago_${id}_${currentUser.u}`);
+            try {
+                await fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd });
+            } catch(e) { console.error("Error subiendo imagen"); }
+        }
+
+        // Actualiza el JSON localmente antes de enviarlo
         const userIndex = sgfConfig.usuarios.findIndex(usr => usr.u === currentUser.u);
-        sgfConfig.usuarios[userIndex].estado = "PENDIENTE";
+        sgfConfig.usuarios[userIndex].estado = "AUDITANDO";
         sgfConfig.usuarios[userIndex].token_orden = currentUser.t;
-        currentUser.estado = "PENDIENTE";
+        currentUser.estado = "AUDITANDO";
         currentUser.token_orden = currentUser.t;
 
         if (!sgfConfig.ordenes) sgfConfig.ordenes = [];
@@ -471,18 +521,37 @@
             fecha: new Date().toISOString(),
             estado: 'Pendiente'
         });
-        saveDB();
 
-        if(f) {
-            const fd = new FormData();
-            fd.append('file', f);
-            fd.append('upload_preset', 'ordenes');
-            fd.append('public_id', `pago_${id}_${currentUser.u}`);
-            fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd }).catch(()=>console.log("Upload pending"));
+        // Aplicación Módulo 3: Revert Key y escritura en JSON de GitHub
+        const realKey = sgfConfig.cloud_access.split('').reverse().join('');
+        const payload = btoa(unescape(encodeURIComponent(JSON.stringify(sgfConfig, null, 4))));
+
+        showToast("Enviando orden a la central...", "info");
+
+        try {
+            const putReq = await fetch(CONFIG_API_URL, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${realKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: `Auditoría solicitada por ${currentUser.u}`,
+                    content: payload,
+                    sha: currentFileSha
+                })
+            });
+
+            if (putReq.ok) {
+                saveDB();
+                verificarEstadoAuditoria();
+                showToast("Orden enviada exitosamente al Servicio de Validación.", "success");
+            } else {
+                throw new Error("No se pudo escribir en el servidor");
+            }
+        } catch(err) {
+            showToast("Error de red al enviar la orden.", "error");
         }
-
-        verificarEstadoAuditoria();
-        showToast("Orden enviada exitosamente al Servicio de Validación.", "success");
     }
 </script>
 </body>
