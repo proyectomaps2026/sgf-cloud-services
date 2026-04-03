@@ -78,7 +78,7 @@
     <div id="force-reset">
         <i class="fa-solid fa-user-lock" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad de Nodo</h2>
-        <p style="color:var(--text-muted)">Para finalizar su sesión y proteger su Llave API, debe establecer sus propias credenciales.</p>
+        <p style="color:var(--text-muted)">Establezca sus nuevas credenciales privadas para finalizar la sesión y proteger su Llave API.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
         <button class="btn-main" onclick="guardarReset()">ESTABLECER CREDENCIALES</button>
@@ -94,7 +94,7 @@
 
     <div id="status-section">
         <div class="panel-header">
-            <div id="display-user" style="font-weight: bold;">Usuario: ---</div>
+            <div id="display-user" style="font-weight: bold;">Sesión: ---</div>
             <button onclick="iniciarLogoutSeguro()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
         </div>
 
@@ -128,11 +128,21 @@
                 </div>
 
                 <div id="form-inner">
-                    <select id="tipo-tramite" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd;">
-                        <option>Renovar Llave Vencida (Para recuperar acceso)</option>
-                        <option>Actualizar Licencia Existente (Para extender tiempo de hosting)</option>
+                    <label for="tipo-tramite" style="font-size:11px; color:#555; font-weight:bold;">Tipo de Solicitud</label>
+                    <select id="tipo-tramite" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd; margin-top: 4px;">
+                        <option>Renovar Llave Vencida</option>
+                        <option>Actualizar Licencia Existente</option>
                     </select>
-                    <input type="text" id="ref" placeholder="Nro de Referencia" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 10px;">
+
+                    <label for="metodo-pago" style="font-size:11px; color:#555; font-weight:bold;">Método de Pago</label>
+                    <select id="metodo-pago" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd; margin-top: 4px;">
+                        <option>Transferencia Bancaria</option>
+                        <option>Pago Móvil</option>
+                        <option>Binance (USDT)</option>
+                        <option>Acuerdo con Master</option>
+                    </select>
+                    
+                    <input type="text" id="ref" placeholder="Nro de Referencia" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
                     
                     <label class="file-upload">
                         <input type="file" id="archivo" onchange="document.getElementById('file-name').innerText = this.files[0].name">
@@ -153,11 +163,11 @@
 </div>
 
 <script>
-    // BASE DE DATOS FLEXIBLE EN LOCALSTORAGE (SIMULACIÓN)
-    let sgfData = JSON.parse(localStorage.getItem('sgf_portal_v3_multi')) || {
+    // BASE DE DATOS MULTI-USUARIO (SIMULACIÓN)
+    let sgfData = JSON.parse(localStorage.getItem('sgf_portal_db_v4')) || {
         usuarios: [
-            { u: "admin", p: "admin", n: "SC-01", t: "E-RANDOM-SC01-20240115-SEMILLA" },
-            { u: "aura", p: "123", n: "SC-02", t: "E-AURA-SC02-20260402-KEY" }
+            { u: "admin", p: "admin", n: "Master", t: "E-MASTER-NODE-20991231-ROOTKEY" },
+            { u: "alcaldia", p: "12345678", n: "Sede Central", t: "E-SEDE-SC01-20250820-KEY" }
         ]
     };
     
@@ -167,15 +177,16 @@
         const user = document.getElementById('ui').value;
         const pass = document.getElementById('pi').value;
 
-        // Búsqueda en el array de usuarios con .find()
-        const foundUser = sgfData.usuarios.find(u => u.u === user && u.p === pass);
+        // Validación con .find() para buscar en la lista de usuarios
+        const foundUser = sgfData.usuarios.find(usr => usr.u === user && usr.p === pass);
 
         if (foundUser) {
-            currentUser = foundUser; // Guardamos el usuario activo
+            currentUser = foundUser;
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
+            
             // Identidad dinámica en el header
-            document.getElementById('display-user').innerText = "Usuario: " + currentUser.u;
+            document.getElementById('display-user').innerText = "Sesión: " + currentUser.u;
             procesarLicencia();
         } else {
             alert("Credenciales incorrectas.");
@@ -183,6 +194,7 @@
     }
 
     function procesarLicencia() {
+        if (!currentUser) return;
         const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
         document.getElementById('lbl-nodo').innerText = currentUser.n;
@@ -222,32 +234,31 @@
     }
 
     function guardarReset() {
+        if (!currentUser) return;
         const nu = document.getElementById('nu').value;
         const np = document.getElementById('np').value;
-        if(nu.length < 4 || nu === "admin") {
-             alert("Usuario inválido. No puede ser 'admin' ni tener menos de 4 caracteres.");
-             return;
-        }
-
-        // Encontrar el índice del usuario actual para actualizarlo
-        const userIndex = sgfData.usuarios.findIndex(u => u.u === currentUser.u && u.p === currentUser.p);
+        if(nu.length < 4) return alert("El nuevo usuario debe tener al menos 4 caracteres.");
+        
+        // Encontrar el índice del usuario actual para actualizarlo en la "base de datos"
+        const userIndex = sgfData.usuarios.findIndex(usr => usr.u === currentUser.u);
         if (userIndex !== -1) {
             sgfData.usuarios[userIndex].u = nu;
             sgfData.usuarios[userIndex].p = np;
         }
         
-        localStorage.setItem('sgf_portal_v3_multi', JSON.stringify(sgfData));
-        // Solo recarga después de guardar
+        localStorage.setItem('sgf_portal_db_v4', JSON.stringify(sgfData));
+        // Solo recarga después de guardar las nuevas credenciales
         location.reload();
     }
 
     async function enviarOrden() {
         const tramite = document.getElementById('tipo-tramite').value;
+        const pago = document.getElementById('metodo-pago').value;
         const r = document.getElementById('ref').value;
         const f = document.getElementById('archivo').files[0];
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
 
-        if(!r) return alert("Indique la referencia.");
+        if(!r && pago !== "Acuerdo con Master") return alert("Indique la referencia del pago.");
 
         // SUBIDA A CLOUDINARY
         if(f) {
@@ -265,8 +276,7 @@
         document.getElementById('status-indicator').className = "status-pill proximo";
         document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
         
-        // El mensaje de confirmación ahora incluye el tipo de trámite
-        alert(`Orden #${id} por "${tramite}" enviada al equipo de conciliación.`);
+        alert(`Orden #${id} enviada. Trámite: "${tramite}", Pago: "${pago}".`);
     }
 </script>
 </body>
