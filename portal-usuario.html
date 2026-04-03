@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. Limpieza de Metadatos -->
-    <title>SGF CLOUD | Gestión de Servicios de Datos</title>
-    <meta property="og:title" content="SGF CLOUD | Gestión de Servicios de Datos">
+    <!-- 1 & 5. Limpieza de Metadatos -->
+    <title>SGF CLOUD | Servicios Globales</title>
+    <meta property="og:title" content="SGF CLOUD | Servicios Globales">
     <meta property="og:description" content="Portal seguro para la gestión de Hosting y Licencias API.">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -63,7 +63,7 @@
         .token-container { background: #f1f3f5; border: 1px dashed #ced4da; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: center; }
         #token-display { font-family: monospace; font-size: 12px; color: #444; word-break: break-all; display: block; margin-bottom: 10px; }
         .btn-copy { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
-        #nodo-identidad { font-size: 11px; font-weight: bold; color: var(--text-muted); margin-top: 15px; display: block; text-align: center; }
+        #terminal-identidad { font-size: 11px; font-weight: bold; color: var(--text-muted); margin-top: 15px; display: block; text-align: center; }
 
         /* --- NUEVO DISEÑO DE BOTONES DE TRÁMITE (Card 1 y Card 2) --- */
         .tramite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
@@ -106,7 +106,7 @@
 <body>
 
 <div class="container">
-    <!-- 5. El Gatillo de Autonomía al Salir -->
+    <!-- 6. El Gatillo de Autonomía al Salir -->
     <div id="force-reset">
         <i class="fa-solid fa-user-shield" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad SGF Cloud</h2>
@@ -136,7 +136,7 @@
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
-                        Vencimiento: <b id="lbl-vence">---</b> | Nodo: <b id="lbl-nodo">---</b>
+                        Vencimiento: <b id="lbl-vence">---</b> | P. Acceso: <b id="lbl-terminal">---</b>
                     </p>
                 </div>
 
@@ -148,8 +148,8 @@
                             <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
                         </button>
                     </div>
-                    <!-- 4. Identidad del Nodo y Seguridad "Mapa" -->
-                    <span id="nodo-identidad">NODO: ---</span>
+                    <!-- 1. Limpieza de Identidad -->
+                    <span id="terminal-identidad">Terminal: ---</span>
                     <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
                 </div>
             </div>
@@ -158,21 +158,21 @@
                 <h4 style="margin-top:0; color:var(--primary); font-size:12px; text-transform:uppercase;">Generar Orden de Servicio</h4>
                 
                 <div id="form-inner">
-                    <!-- 2. UI Moderna: Botones de Acción (Trámites) -->
+                    <!-- 2. UI de Selección: Llaves de Acción -->
                     <div class="tramite-grid">
                         <button class="tramite-btn orange-card" onclick="seleccionarTramite(this, 'Renovar Licencia Vencida')">
-                            <i class="fa-solid fa-file-circle-exclamation"></i>
+                            <i class="fa-solid fa-key"></i>
                             <span>RENOVAR LICENCIA VENCIDA</span>
                         </button>
-                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Servicio Activo')">
-                            <i class="fa-solid fa-file-circle-check"></i>
-                            <span>ACTUALIZAR SERVICIO ACTIVO</span>
+                        <button class="tramite-btn blue-card" onclick="seleccionarTramite(this, 'Actualizar Licencia Activa')">
+                            <i class="fa-solid fa-key"></i>
+                            <span>ACTUALIZAR LICENCIA ACTIVA</span>
                         </button>
                     </div>
                     
                     <label style="font-size:11px; color:#555; font-weight:bold; margin-bottom: 8px; display:block;">Método de Pago</label>
                     
-                    <!-- 3. Métodos de Pago Modernos y Recuperación de Datos -->
+                    <!-- 5. Datos de Pago y Metadatos -->
                     <div class="pay-methods-grid">
                         <div class="pay-btn" onclick="seleccionarPago(this, 'banco')">
                             <i class="fa-solid fa-building-columns"></i> Banco
@@ -185,9 +185,7 @@
                         </div>
                     </div>
 
-                    <div id="pay-details" class="pay-details-box">
-                        <!-- Aquí se inyectan los datos según selección -->
-                    </div>
+                    <div id="pay-details" class="pay-details-box"></div>
                     
                     <input type="hidden" id="metodo-pago-seleccionado" value="">
                     
@@ -212,23 +210,28 @@
 </div>
 
 <script>
-    // 4. Seguridad: Bloqueo de inspección
+    // 3. Seguridad Nivel Mapa (Bloqueo de Sources y F12)
     document.addEventListener('contextmenu', event => event.preventDefault());
+    
     document.onkeydown = function(e) {
-        if(e.keyCode == 123) return false;
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
-    }
+        if(e.keyCode == 123) return false; // Bloquea F12
+        if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) return false;
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Bloquea Ver Código Fuente
+    };
+
+    // Anti-Debug infinito
+    setInterval(function() {
+        debugger;
+    }, 100);
 
     // BASE DE DATOS MULTI-USUARIO (Cifrado Base64)
-    const dbKey = 'sgf_cloud_db_v8';
+    const dbKey = 'sgf_cloud_db_v9';
     let defaultData = {
         usuarios: [
             { u: "admin", p: "admin", n: "Master", t: "E-MASTER-NODE-20991231-ROOTKEY" },
             { u: "alcaldia", p: "12345678", n: "Sede Central", t: "E-SEDE-SC01-20250820-KEY" }
-        ]
+        ],
+        ordenes: [] // Para sincronización con el Master
     };
     
     let sgfConfig;
@@ -242,7 +245,6 @@
     function saveDB() {
         localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
     }
-    // Inicializar si no existe
     if(!localStorage.getItem(dbKey)) saveDB();
 
     let currentUser = null;
@@ -269,10 +271,10 @@
         if (!currentUser) return;
         const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
-        document.getElementById('lbl-nodo').innerText = currentUser.n;
+        document.getElementById('lbl-terminal').innerText = currentUser.n; // Ajuste Identidad
         
-        // Identidad del Nodo Dinámica
-        document.getElementById('nodo-identidad').innerText = `NODO: ${currentUser.u.toUpperCase()}-VENEGEO-2026`;
+        // 1. Limpieza de Identidad: Etiqueta dinámica
+        document.getElementById('terminal-identidad').innerText = `Terminal: ${currentUser.u.toUpperCase()}-2026`;
 
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
@@ -357,12 +359,24 @@
 
         if(!r && pago !== "acuerdo") return alert("Indique la referencia o comprobante del pago.");
 
+        // 4. Sincronización con el Master (Persistencia Local)
+        if (!sgfConfig.ordenes) sgfConfig.ordenes = [];
+        sgfConfig.ordenes.push({
+            id: id,
+            usuario: currentUser.u, // Identificación exacta para el Master
+            tramite: selectedTramite,
+            metodo: pago,
+            referencia: r || 'N/A',
+            fecha: new Date().toISOString(),
+            estado: 'Pendiente'
+        });
+        saveDB();
+
         if(f) {
             const fd = new FormData();
             fd.append('file', f);
             fd.append('upload_preset', 'ordenes');
-            fd.append('public_id', `pago_${id}`);
-            // Fetch a Cloudinary original mantenido (el token del usuario lo dejamos igual)
+            fd.append('public_id', `pago_${id}_${currentUser.u}`);
             fetch('https://api.cloudinary.com/v1_1/drxiko8l4/image/upload', { method: 'POST', body: fd }).catch(()=>console.log("Upload pending..."));
         }
 
@@ -372,9 +386,6 @@
         
         document.getElementById('status-indicator').className = "status-pill proximo";
         document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
-        
-        // Logica silenciosa
-        console.log(`Orden #${id} enviada. Trámite: "${selectedTramite}", Pago: "${pago}".`);
     }
 </script>
 </body>
