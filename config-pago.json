@@ -20,42 +20,5 @@
             "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
-    "ordenes": [
-        {
-            "id": "ORD-680654",
-            "usuario": "alcaldia",
-            "tramite": "Renovar Licencia Vencida",
-            "metodo": "acuerdo",
-            "referencia": "N/A",
-            "fecha": "2026-04-03T21:05:05.925Z",
-            "estado": "Aprobada"
-        },
-        {
-            "id": "ORD-184392",
-            "usuario": "alcaldia",
-            "tramite": "Renovar Licencia Vencida",
-            "metodo": "acuerdo",
-            "referencia": "N/A",
-            "fecha": "2026-04-03T21:06:16.447Z",
-            "estado": "Pendiente"
-        },
-        {
-            "id": "ORD-116780",
-            "usuario": "alcaldia",
-            "tramite": "Actualizar Servicio Activo",
-            "metodo": "acuerdo",
-            "referencia": "N/A",
-            "fecha": "2026-04-03T21:13:28.121Z",
-            "estado": "Pendiente"
-        },
-        {
-            "id": "ORD-955521",
-            "usuario": "alcaldia",
-            "tramite": "Actualizar Servicio Activo",
-            "metodo": "acuerdo",
-            "referencia": "N/A",
-            "fecha": "2026-04-03T21:14:10.472Z",
-            "estado": "Pendiente"
-        }
-    ]
+    "ordenes": []
 }
