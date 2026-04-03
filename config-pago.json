@@ -18,6 +18,15 @@
             "p": "admin",
             "t": "E-INIT-ADMIN-MjAyMDAxMDE=-START",
             "estado": "LIBRE"
+        },
+        {
+            "user": "alcaldia",
+            "id": "ID-ALCALDIA-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-12-31",
+            "u": "alcaldia",
+            "p": "admin",
+            "t": "E-INIT-ALCALDIA-MjAyNjEyMzE=-START"
         }
     ],
     "ordenes": []
