@@ -576,12 +576,29 @@
         ordenesInversas.forEach(p => {
             try {
                 if(!p || !p.id) return;
-                let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
-                let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
+                
+                // LÓGICA VISUAL: Mostrar Foto o Tarjeta de Acuerdo
+                let visualMetodo = "";
+                if (p.metodo === "acuerdo") {
+                    visualMetodo = `<div style="text-align:center; padding:10px; background:#111; border-radius:6px; border:1px solid #333; color:var(--warning);"><i class="fa-solid fa-handshake" style="font-size:24px;"></i><br><small style="font-size:9px; color:#888;">ACUERDO</small></div>`;
+                } else {
+                    let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+                    visualMetodo = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
+                }
+
                 let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
                 let fechaCorta = p.fecha ? p.fecha.split('T')[0] : '---';
                 
-                cuerpo.innerHTML += `<tr><td style="color:#888;">${fechaCorta}</td><td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo||'---'}</span><br><small>Ref: ${p.referencia||'---'}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+                cuerpo.innerHTML += `
+                    <tr>
+                        <td style="color:#888;">${fechaCorta}</td>
+                        <td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td>
+                        <td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td>
+                        <td><span style="color:var(--primary); font-weight:bold;">${(p.metodo||'').toUpperCase()}</span><br><small>Ref: ${p.referencia||'---'}</small></td>
+                        <td>${visualMetodo}</td>
+                        <td style="text-align: right;">${actionBtn}</td>
+                    </tr>
+                `;
             } catch(e) {}
         });
     }
