@@ -16,11 +16,12 @@
         #sync-status { font-size: 11px; color: #888; text-align: center; margin-bottom: 20px; font-weight: bold; padding: 10px; border-radius: 8px; background: #111; }
         .status-online { color: var(--success) !important; border: 1px solid rgba(0, 200, 83, 0.3); background: rgba(0, 200, 83, 0.1) !important; }
         .status-offline { color: var(--danger) !important; border: 1px solid rgba(255, 51, 51, 0.3); background: rgba(255, 51, 51, 0.1) !important; }
-        
+        .status-warning { color: var(--warning) !important; border: 1px solid rgba(255, 204, 0, 0.3); background: rgba(255, 204, 0, 0.1) !important; }
+
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
         
-        .sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 10px; }
+        .sync-btn { background: rgba(0, 188, 212, 0.1); color: var(--info); border: 1px solid rgba(0, 188, 212, 0.2); margin-top: 10px; transition: all 0.3s ease; }
         .sync-btn:hover { background: var(--info); color: white; }
         .config-btn { background: rgba(156, 39, 176, 0.1); color: var(--purple); border: 1px solid rgba(156, 39, 176, 0.2); margin-top: 20px; }
         .config-btn:hover { background: var(--purple); color: white; }
@@ -78,7 +79,6 @@
         .toast-info { background: var(--info); color: #000; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Visor de Comprobantes */
         .img-container { position: relative; display: inline-block; }
         .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
         .img-container:hover .img-thumb { border-color: var(--primary); }
@@ -99,8 +99,9 @@
     <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
     
     <div class="nav-item config-btn" onclick="abrirConfigCanal()"><i class="fa-solid fa-gears"></i> Configurar Llave (GitHub)</div>
-    <!-- Botón Lanzallamas -->
-    <div class="nav-item sync-btn" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
+    
+    <!-- BOTÓN RESCATE (LANZALLAMAS) -->
+    <div class="nav-item sync-btn" id="btn-force-sync" onclick="syncDataToRemote()"><i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube</div>
 </div>
 
 <div class="main" id="view-clientes">
@@ -157,8 +158,8 @@
 <div id="modalNuevo" class="modal">
     <div class="modal-content">
         <h3>Alta de Nuevo Terminal</h3>
-        <input type="text" id="n_user" placeholder="Usuario ID (Ej: alcaldia)">
-        <input type="text" id="n_pass" placeholder="Clave Base" value="admin">
+        <input type="text" id="n_user" placeholder="Nombre Usuario (Ej: alcaldia)">
+        <input type="text" id="n_pass" placeholder="Contraseña (Default: admin)" value="admin">
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn btn-primary" onclick="crearTerminal()" style="flex:1">Crear Acceso</button>
             <button class="btn btn-action" onclick="closeModal('modalNuevo')">Cancelar</button>
@@ -193,8 +194,7 @@
 <div id="modalConfig" class="modal">
     <div class="modal-content">
         <h3>Configurar Llave (GitHub)</h3>
-        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token (ghp_...). El sistema lo invertirá automáticamente y lo protegerá en su navegador.</p>
-        
+        <p style="font-size:12px; color:#888; margin-bottom: 15px;">Pegue aquí su Token original. El sistema lo invertirá y protegerá en su navegador.</p>
         <input type="password" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
         
         <div style="display:flex; gap:10px; margin-top:25px;">
@@ -205,14 +205,7 @@
 </div>
 
 <script>
-    // Sistema Anti-Inspección
     document.addEventListener('contextmenu', event => event.preventDefault());
-    setInterval(() => {
-        if (Math.abs(window.outerWidth - window.innerWidth) > 160 || Math.abs(window.outerHeight - window.innerHeight) > 160) {
-            document.body.innerHTML = '';
-            setTimeout(() => location.reload(), 1500);
-        }
-    }, 1000);
 
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
@@ -225,21 +218,20 @@
     }
 
     /* =====================================================================
-       VARIABLES GLOBALES Y MEMORIA LOCAL
+       VARIABLES GLOBALES Y MEMORIA
        ===================================================================== */
+    // URL Fija requerida
     const GITHUB_API_URL = "https://api.github.com/repos/proyectomaps2026/sgf-cloud-services/contents/config-pago.json";
-    const dbKey = 'sgf_master_db_v21'; 
+    const dbKey = 'sgf_master_db_v25'; 
     let sgfConfig = { usuarios: [], ordenes: [] };
 
     function loadDB() {
         try {
             let stored = localStorage.getItem(dbKey);
             if(stored) sgfConfig = JSON.parse(atob(stored));
-            // Garantizar que siempre sean arrays (evita que la tabla colapse)
             if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
             if(!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
         } catch(e) { 
-            console.error("Error DB Local", e);
             sgfConfig = { usuarios: [], ordenes: [] };
         }
     }
@@ -262,10 +254,98 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       MOTOR DE SINCRONIZACIÓN (LANZALLAMAS ABSOLUTO)
+       PASO 2 y 3: PUENTE DE MANDO Y BOTÓN RESCATE (FORZAR ESCRITURA)
        ===================================================================== */
+    async function syncDataToRemote() {
+        const btn = document.getElementById('btn-force-sync');
+        const semillaRevertida = localStorage.getItem('semilla_revert');
+        
+        if (!semillaRevertida) {
+            alert("Acción Denegada: Falta configurar la Llave GitHub en el menú.");
+            return;
+        }
 
-    // 1. POLLING DE LECTURA
+        // Feedback Visual Activado
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.style.backgroundColor = '#f57c00'; // Naranja Processing
+        btn.style.color = '#fff';
+
+        // Lógica Revert: Le damos la vuelta a la llave para usarla
+        const realKey = semillaRevertida.split('').reverse().join('');
+        
+        // Garantizar usuario root
+        if (!sgfConfig.usuarios.some(u => (u.user === 'admin' || u.u === 'admin'))) {
+             sgfConfig.usuarios.unshift({ user: 'admin', u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`, estado: "LIBRE" });
+        }
+
+        // Empaquetado del Payload inyectando la llave invertida (cloud_access)
+        const payloadToUpload = {
+            cloud_access: semillaRevertida,
+            usuarios: sgfConfig.usuarios,
+            ordenes: sgfConfig.ordenes
+        };
+
+        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
+        let fileSha = null;
+
+        // Intentar obtener el SHA (Si falla, el flujo sigue para forzar creación)
+        try {
+            const getReq = await fetch(GITHUB_API_URL, {
+                method: "GET",
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+            });
+            if (getReq.ok) {
+                const getRes = await getReq.json();
+                fileSha = getRes.sha;
+            }
+        } catch(e) {}
+
+        const bodyData = {
+            message: "SGF Master: Guardado Directo",
+            content: payloadBase64
+        };
+        
+        if (fileSha) bodyData.sha = fileSha;
+
+        // Disparo Final a la API (Ignorando errores previos)
+        try {
+            const putReq = await fetch(GITHUB_API_URL, {
+                method: "PUT",
+                headers: { 
+                    "Authorization": "token " + realKey,
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify(bodyData)
+            });
+
+            if(putReq.ok) {
+                // Éxito: Botón Verde
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Nube Sincronizada';
+                btn.style.backgroundColor = '#00c853';
+                document.getElementById('sync-status').className = 'status-online';
+                document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
+            } else {
+                // Error de GitHub (Ej. 401: Llave Inválida, 422: Conflicto SHA)
+                const errData = await putReq.json();
+                alert(`Error HTTP ${putReq.status}\nMensaje de GitHub: ${errData.message}`);
+                btn.innerHTML = `<i class="fa-solid fa-xmark"></i> Error ${putReq.status}`;
+                btn.style.backgroundColor = '#d32f2f';
+            }
+        } catch (error) {
+            // Error de Red o CORS
+            alert(`Fallo de Red o Conexión: ${error.message}`);
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Fallo Red';
+            btn.style.backgroundColor = '#d32f2f';
+        }
+
+        // Restaurar estado visual del botón tras 3 segundos
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
+            btn.style.backgroundColor = '';
+        }, 3000);
+    }
+
+    // Tarea de Lectura de Fondo
     async function syncDataFromRemote() {
         const semillaRevertida = localStorage.getItem('semilla_revert');
         if (!semillaRevertida) return;
@@ -291,101 +371,184 @@
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
             }
-        } catch (error) {
-            statusInd.className = 'status-offline';
-            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
-        }
+        } catch (error) {}
     }
 
     setInterval(syncDataFromRemote, 15000);
 
-    // 2. ESCRITURA FORZADA (Lanzallamas - No pregunta, solo dispara)
-    async function syncDataToRemote(silent = false) {
-        const semillaRevertida = localStorage.getItem('semilla_revert');
+    /* =====================================================================
+       PASO 1: EL DATA MAPPING (MAPA DE DATOS EXACTO EN LA TABLA)
+       ===================================================================== */
+    
+    // Función de apoyo para extraer la fecha si es necesario
+    function decodificarFecha(token) {
+        if (!token) return null;
+        try { const partes = token.split('-'); if (partes.length >= 4) return atob(partes[3]); } catch(e) {}
+        return null;
+    }
+
+    // Renderizado seguro que crea las filas `<tr>` buscando los nombres exactos
+    function renderNodos() {
+        const list = document.getElementById('listaNodos');
+        list.innerHTML = "";
         
-        if (!semillaRevertida) {
-            if(!silent) showToast("Primero configure su Llave GitHub.", "warning");
-            return;
-        }
+        let arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        let pendingAudits = arrOrdenes.filter(o => o.estado === 'Pendiente').length;
+        let count = 0;
 
-        if(!silent) showToast("Empujando datos a la fuerza...", "info");
-        
-        const realKey = semillaRevertida.split('').reverse().join('');
-        
-        // Blindaje del JSON
-        if (!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
-        if (!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
+        (sgfConfig.usuarios || []).forEach((usr) => {
+            try {
+                // Buscamos los datos con los nombres exactos (con fallback por si acaso)
+                const nombreUser = usr.user || usr.u || "";
+                if(!nombreUser || nombreUser === 'admin') return; 
+                
+                count++;
+                const idUser = usr.id || `ID-${nombreUser.toUpperCase()}-2026`;
+                const estadoUser = usr.estado || "LIBRE";
+                // Toma vencimiento directo o lo intenta sacar del token
+                let vencimientoUser = usr.vencimiento || decodificarFecha(usr.t) || "2026-12-31";
 
-        // Asegurar Admin Root
-        if (!sgfConfig.usuarios.some(u => u.u === 'admin')) {
-             sgfConfig.usuarios.unshift({ u: 'admin', p: 'admin', t: `E-ROOT-SYS-${btoa("20991231")}-MASTERKEY`});
-        }
+                // Diseño visual del estado
+                let portalStatus = (estadoUser === "AUDITANDO" || estadoUser === "PENDIENTE") ? 
+                    `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
+                    (estadoUser === "LIBRE" ? `<span class="status-pill status-active">LIBRE</span>` : `<span class="status-pill badge-normal">${estadoUser}</span>`);
+                
+                // Formateo de fecha visual si es YYYYMMDD
+                let fechaMostrada = vencimientoUser;
+                if(vencimientoUser.length === 8 && !vencimientoUser.includes('-')) {
+                    fechaMostrada = `${vencimientoUser.substring(6,8)}/${vencimientoUser.substring(4,6)}/${vencimientoUser.substring(0,4)}`;
+                }
 
-        // Empaquetado Exacto
-        const payloadToUpload = {
-            cloud_access: semillaRevertida,
-            usuarios: sgfConfig.usuarios,
-            ordenes: sgfConfig.ordenes
-        };
-
-        const jsonString = JSON.stringify(payloadToUpload, null, 4);
-        const payloadBase64 = btoa(unescape(encodeURIComponent(jsonString)));
-
-        let fileSha = null;
-
-        // Intentar obtener el SHA (Si falla, continuamos igual)
-        try {
-            const getReq = await fetch(GITHUB_API_URL, {
-                method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
-            });
-            if (getReq.ok) {
-                const getRes = await getReq.json();
-                fileSha = getRes.sha;
+                // Generación de la Fila (<tr>)
+                list.innerHTML += `
+                    <tr>
+                        <td><b style="color:white; font-size:14px;">${nombreUser.toUpperCase()}</b></td>
+                        <td><code style="color:var(--primary); font-size:12px;">${idUser}</code></td>
+                        <td>${portalStatus}</td>
+                        <td style="color:#aaa;">${fechaMostrada}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-action" onclick="prepararRenovacionManual('${nombreUser}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
+                            <button class="btn btn-danger" onclick="eliminarTerminal('${nombreUser}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            } catch(e) {
+                console.error("Fila omitida por error de estructura de datos:", e);
             }
-        } catch(e) { console.warn("No se obtuvo SHA, forzando creación..."); }
+        });
 
-        // Cuerpo del PUT
-        const bodyData = {
-            message: "SGF Master: Guardado Forzoso (Lanzallamas)",
-            content: payloadBase64
-        };
+        document.getElementById('statTotal').innerText = count;
+        document.getElementById('statPend').innerText = pendingAudits;
+        document.getElementById('statRecaudo').innerText = arrOrdenes.filter(o => o.estado === 'Aprobada').length;
+    }
+
+    function renderHistorial() {
+        const cuerpo = document.getElementById('cuerpoPagos');
+        cuerpo.innerHTML = "";
         
-        if (fileSha) bodyData.sha = fileSha;
-
-        // El Disparo
-        try {
-            const putReq = await fetch(GITHUB_API_URL, {
-                method: "PUT",
-                headers: { 
-                    "Authorization": "token " + realKey,
-                    "Content-Type": "application/json" 
-                },
-                body: JSON.stringify(bodyData)
-            });
-
-            if(!putReq.ok) {
-                const errData = await putReq.json();
-                alert(`RECHAZO DE GITHUB\nCódigo: ${putReq.status}\nMensaje: ${errData.message}\nSi el error es 409 o 422, el repositorio bloqueó la sobreescritura.`);
-                throw new Error("Rechazado por GitHub");
-            }
-            
-            if(!silent) showToast("Sincronización forzada exitosa.", "success");
-            document.getElementById('sync-status').className = 'status-online';
-            document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
-
-        } catch (error) {
-            if(!silent && error.message !== "Rechazado por GitHub") {
-                alert(`Error de Red: ${error.message}`);
-            }
-            document.getElementById('sync-status').className = 'status-offline';
-            document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Error Sync`;
-        }
+        let arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
+        const ordenesInversas = [...arrOrdenes].reverse();
+        
+        ordenesInversas.forEach(p => {
+            try {
+                if(!p || !p.id) return;
+                let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+                let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
+                let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
+                let fechaCorta = p.fecha ? p.fecha.split('T')[0] : '---';
+                
+                cuerpo.innerHTML += `<tr><td style="color:#888;">${fechaCorta}</td><td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo||'---'}</span><br><small>Ref: ${p.referencia||'---'}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+            } catch(e) {}
+        });
     }
 
     /* =====================================================================
-       CONFIGURACIÓN DE LLAVE EN LOCALSTORAGE
+       ACCIONES DE INTERFAZ Y CREACIÓN DEL OBJETO EXACTO
        ===================================================================== */
+    function crearTerminal() {
+        const u = document.getElementById('n_user').value.toLowerCase().trim();
+        const p = document.getElementById('n_pass').value.trim();
+
+        if(!u) return showToast("El ID de usuario es obligatorio.", "error");
+        
+        if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
+        if(sgfConfig.usuarios.find(usr => (usr.u === u || usr.user === u))) {
+            return showToast("Este usuario ya existe.", "warning");
+        }
+
+        // Estructura de Datos Exacta Requerida (Con fallback para el portal)
+        sgfConfig.usuarios.push({ 
+            user: u, 
+            id: `ID-${u.toUpperCase()}-2026`, 
+            estado: "LIBRE", 
+            vencimiento: "2026-12-31",
+            u: u, // Fallback Portal
+            p: p || 'admin', 
+            t: `E-INIT-${u.toUpperCase()}-${btoa("20261231")}-START` // Fallback Portal
+        });
+
+        saveDB(); 
+        document.getElementById('n_user').value = '';
+        document.getElementById('n_pass').value = 'admin';
+        closeModal('modalNuevo'); 
+        
+        syncDataToRemote(); // Lanza actualización automática
+    }
+
+    function eliminarTerminal(userName) {
+        if(confirm(`¿ELIMINAR a [${userName}] de la Nube?`)) {
+            sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== userName && u.user !== userName);
+            saveDB(); syncDataToRemote();
+        }
+    }
+
+    function limpiarHistorial() {
+        if(confirm("¿Vaciar registro de transacciones?")) {
+            sgfConfig.ordenes = [];
+            saveDB(); syncDataToRemote();
+        }
+    }
+
+    function abrirAprobacion(orderId, userName) {
+        document.getElementById('lbl-token-user').innerText = userName.toUpperCase();
+        document.getElementById('token_order_id').value = orderId;
+        document.getElementById('token_user_id').value = userName;
+        openModal('modalToken');
+    }
+
+    function prepararRenovacionManual(userName) { abrirAprobacion("MANUAL", userName); }
+
+    function aprobarYEnviar() {
+        const userId = document.getElementById('token_user_id').value;
+        const orderId = document.getElementById('token_order_id').value;
+        const dias = parseInt(document.getElementById('dias_extension').value);
+        let semilla = document.getElementById('semilla').value || "SGF2026";
+
+        const usrIdx = sgfConfig.usuarios.findIndex(u => (u.u === userId || u.user === userId));
+        if(usrIdx === -1) return;
+
+        let d = new Date(); d.setDate(d.getDate() + dias);
+        let year = d.getFullYear();
+        let month = String(d.getMonth()+1).padStart(2,'0');
+        let day = String(d.getDate()).padStart(2,'0');
+        
+        let fechaB64 = btoa(`${year}${month}${day}`); 
+        let fechaLegible = `${year}-${month}-${day}`;
+        
+        // Actualizamos los campos
+        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
+        sgfConfig.usuarios[usrIdx].vencimiento = fechaLegible;
+        sgfConfig.usuarios[usrIdx].t = `E-${Math.random().toString(36).substring(2,6).toUpperCase()}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
+
+        if (orderId !== "MANUAL") {
+            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
+            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
+        }
+        
+        saveDB(); closeModal('modalToken');
+        syncDataToRemote(); 
+    }
+
     function abrirConfigCanal() {
         const semillaActual = localStorage.getItem('semilla_revert');
         if(semillaActual) {
@@ -406,177 +569,6 @@
         closeModal('modalConfig');
         showToast("Llave guardada. Inicializando...", "success");
         syncDataFromRemote(); 
-    }
-
-    /* =====================================================================
-       LÓGICA DE INTERFAZ Y RENDERIZADO BLINDADO
-       ===================================================================== */
-    function decodificarFecha(token) {
-        if (!token) return null;
-        try { 
-            const partes = token.split('-'); 
-            if (partes.length >= 4) return atob(partes[3]); 
-        } catch(e) {}
-        return null;
-    }
-
-    function calcularEstado(token) {
-        if(!token || token === "---") return { class: 'status-expired', txt: 'S/ LICENCIA' };
-        const f = decodificarFecha(token);
-        if(!f || f.length !== 8) return { class: 'status-expired', txt: 'ERROR TKN' };
-        
-        const anio = f.substring(0,4), mes = f.substring(4,6), dia = f.substring(6,8);
-        const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
-        const diff = Math.ceil((vDate - new Date()) / (1000 * 60 * 60 * 24));
-        if(diff > 0) return { class: 'status-active', txt: `ACTIVO (${diff} D)` };
-        return { class: 'status-expired', txt: 'VENCIDO' };
-    }
-
-    // Render de Tabla Reparado (A prueba de fallos internos)
-    function renderNodos() {
-        const list = document.getElementById('listaNodos');
-        list.innerHTML = "";
-        
-        const arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
-        const arrUsuarios = Array.isArray(sgfConfig.usuarios) ? sgfConfig.usuarios : [];
-
-        let pendingAudits = arrOrdenes.filter(o => o.estado === 'Pendiente').length;
-
-        arrUsuarios.forEach((u) => {
-            try {
-                // Protección si el objeto viene mal formado o es el admin
-                if(!u || !u.u || u.u === 'admin') return;
-
-                const userName = u.u.toUpperCase();
-                const userTkn = u.t || '---';
-                const estadoTkn = calcularEstado(userTkn);
-                
-                let portalStatus = (u.estado === "AUDITANDO" || u.estado === "PENDIENTE") ? 
-                    `<span class="status-pill status-waiting"><i class="fa-solid fa-bell fa-shake"></i> AUDITANDO</span>` : 
-                    `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
-                
-                let fDecodificada = decodificarFecha(userTkn);
-                let fechaMostrada = (fDecodificada && fDecodificada.length === 8) 
-                    ? `${fDecodificada.substring(6,8)}/${fDecodificada.substring(4,6)}/${fDecodificada.substring(0,4)}` 
-                    : '---';
-
-                list.innerHTML += `
-                    <tr>
-                        <td><b style="color:white; font-size:14px;">${userName}</b></td>
-                        <td><code style="color:var(--primary); font-size:12px;">ID-${userName}-2026</code></td>
-                        <td>${portalStatus}</td>
-                        <td style="color:#aaa;">${fechaMostrada}</td>
-                        <td style="text-align: right;">
-                            <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
-                            <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                `;
-            } catch(e) {
-                console.error("Fila omitida por error de formato:", e);
-            }
-        });
-
-        document.getElementById('statTotal').innerText = arrUsuarios.length > 0 ? arrUsuarios.length - 1 : 0;
-        document.getElementById('statPend').innerText = pendingAudits;
-        document.getElementById('statRecaudo').innerText = arrOrdenes.filter(o => o.estado === 'Aprobada').length;
-    }
-
-    function renderHistorial() {
-        const cuerpo = document.getElementById('cuerpoPagos');
-        cuerpo.innerHTML = "";
-        
-        const arrOrdenes = Array.isArray(sgfConfig.ordenes) ? sgfConfig.ordenes : [];
-        const ordenesInversas = [...arrOrdenes].reverse();
-        
-        ordenesInversas.forEach(p => {
-            try {
-                if(!p || !p.id) return;
-                
-                let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
-                let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
-                let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
-                let fechaCorta = p.fecha ? p.fecha.split('T')[0] : '---';
-                
-                cuerpo.innerHTML += `<tr><td style="color:#888;">${fechaCorta}</td><td><b style="color:white;">${(p.usuario||'').toUpperCase()}</b></td><td><span class="status-pill badge-normal">${p.tramite||'---'}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo||'---'}</span><br><small>Ref: ${p.referencia||'---'}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
-            } catch(e) {}
-        });
-    }
-
-    /* =====================================================================
-       ACCIONES DE INTERFAZ (CON PUSH AUTOMÁTICO)
-       ===================================================================== */
-    function crearTerminal() {
-        const u = document.getElementById('n_user').value.toLowerCase().trim();
-        const p = document.getElementById('n_pass').value.trim();
-
-        if(!u) return showToast("El ID de usuario es obligatorio.", "error");
-        if(!Array.isArray(sgfConfig.usuarios)) sgfConfig.usuarios = [];
-        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("Este usuario ya existe.", "warning");
-
-        sgfConfig.usuarios.push({ 
-            u: u, 
-            p: p || 'admin', 
-            t: `E-INIT-${u.toUpperCase()}-${btoa("20200101")}-START`, 
-            estado: "LIBRE" 
-        });
-
-        saveDB(); 
-        
-        // Limpiar campos del modal
-        document.getElementById('n_user').value = '';
-        document.getElementById('n_pass').value = 'admin';
-        closeModal('modalNuevo'); 
-        
-        showToast("Guardado local. Sincronizando con GitHub...", "info");
-        syncDataToRemote(); // Push Automático
-    }
-
-    function eliminarTerminal(user) {
-        if(confirm(`¿ELIMINAR a [${user}] de la Nube?`)) {
-            sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== user);
-            saveDB(); syncDataToRemote();
-        }
-    }
-
-    function limpiarHistorial() {
-        if(confirm("¿Vaciar registro de transacciones?")) {
-            sgfConfig.ordenes = [];
-            saveDB(); syncDataToRemote();
-        }
-    }
-
-    function abrirAprobacion(orderId, userId) {
-        document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
-        document.getElementById('token_order_id').value = orderId;
-        document.getElementById('token_user_id').value = userId;
-        openModal('modalToken');
-    }
-
-    function prepararRenovacionManual(userId) { abrirAprobacion("MANUAL", userId); }
-
-    function aprobarYEnviar() {
-        const userId = document.getElementById('token_user_id').value;
-        const orderId = document.getElementById('token_order_id').value;
-        const dias = parseInt(document.getElementById('dias_extension').value);
-        let semilla = document.getElementById('semilla').value || "SGF2026";
-
-        const usrIdx = sgfConfig.usuarios.findIndex(u => u.u === userId);
-        if(usrIdx === -1) return;
-
-        let d = new Date(); d.setDate(d.getDate() + dias);
-        let fechaB64 = btoa(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`); 
-        
-        sgfConfig.usuarios[usrIdx].t = `E-${Math.random().toString(36).substring(2,6).toUpperCase()}-${userId.toUpperCase()}-${fechaB64}-${semilla.toUpperCase()}`;
-        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
-
-        if (orderId !== "MANUAL") {
-            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
-            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
-        }
-        
-        saveDB(); closeModal('modalToken');
-        syncDataToRemote(); 
     }
 
     loadDB(); showTab('clientes');
