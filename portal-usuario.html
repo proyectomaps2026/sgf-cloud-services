@@ -78,7 +78,7 @@
     <div id="force-reset">
         <i class="fa-solid fa-user-lock" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
         <h2>Seguridad de Nodo</h2>
-        <p style="color:var(--text-muted)">Para finalizar su sesión y proteger su Llave API, es obligatorio establecer sus propias credenciales.</p>
+        <p style="color:var(--text-muted)">Para finalizar su sesión y proteger su Llave API, debe establecer sus propias credenciales.</p>
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña"></div>
         <button class="btn-main" onclick="guardarReset()">ESTABLECER CREDENCIALES</button>
@@ -87,7 +87,7 @@
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">Servicios de Datos y Hosting Seguros</div>
-        <div class="input-group"><input type="text" id="ui" placeholder="USUARIO"></div>
+        <div class="input-group"><input type="text" id="ui" placeholder="Usuario"></div>
         <div class="input-group"><input type="password" id="pi" placeholder="Contraseña"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
     </div>
@@ -104,7 +104,7 @@
                     <h4>Estatus del Protocolo</h4>
                     <div id="status-indicator" class="status-pill vencido">VERIFICANDO...</div>
                     <p style="text-align: center; font-size: 12px; color: #777;">
-                        Vencimiento: <b id="lbl-vence">---</b>
+                        Vencimiento: <b id="lbl-vence">---</b> | Nodo: <b id="lbl-nodo">---</b>
                     </p>
                 </div>
 
@@ -128,11 +128,11 @@
                 </div>
 
                 <div id="form-inner">
-                    <select id="metodo" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd;">
-                        <option value="Renovar Llave Vencida">Renovar Llave Vencida</option>
-                        <option value="Actualizar Licencia Existente">Actualizar Licencia Existente</option>
+                    <select id="tipo-tramite" style="width:100%; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd;">
+                        <option>Renovar Llave Vencida (Para recuperar acceso)</option>
+                        <option>Actualizar Licencia Existente (Para extender tiempo de hosting)</option>
                     </select>
-                    <input type="text" id="ref" placeholder="Nro de Referencia" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
+                    <input type="text" id="ref" placeholder="Nro de Referencia" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 10px;">
                     
                     <label class="file-upload">
                         <input type="file" id="archivo" onchange="document.getElementById('file-name').innerText = this.files[0].name">
@@ -153,32 +153,40 @@
 </div>
 
 <script>
-    // DATA CONFIGURABLE DESDE GITHUB (SIMULACIÓN)
-    let sgfConfig = JSON.parse(localStorage.getItem('sgf_portal_v3')) || {
-        u: "admin", p: "admin", n: "SC-01",
-        t: "E-RANDOM-SC01-20260402-SEMILLA"
+    // BASE DE DATOS FLEXIBLE EN LOCALSTORAGE (SIMULACIÓN)
+    let sgfData = JSON.parse(localStorage.getItem('sgf_portal_v3_multi')) || {
+        usuarios: [
+            { u: "admin", p: "admin", n: "SC-01", t: "E-RANDOM-SC01-20240115-SEMILLA" },
+            { u: "aura", p: "123", n: "SC-02", t: "E-AURA-SC02-20260402-KEY" }
+        ]
     };
+    
+    let currentUser = null;
 
     function validarLogin() {
         const user = document.getElementById('ui').value;
         const pass = document.getElementById('pi').value;
 
-        // Lógica de validación dinámica, lee cualquier usuario en el objeto de config
-        if(user === sgfConfig.u && pass === sgfConfig.p) {
+        // Búsqueda en el array de usuarios con .find()
+        const foundUser = sgfData.usuarios.find(u => u.u === user && u.p === pass);
+
+        if (foundUser) {
+            currentUser = foundUser; // Guardamos el usuario activo
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('status-section').style.display = 'block';
-            // Muestra solo el usuario, sin nombres fijos
-            document.getElementById('display-user').innerText = "Usuario: " + sgfConfig.u;
-            
-            // El reset automático al inicio ha sido eliminado.
+            // Identidad dinámica en el header
+            document.getElementById('display-user').innerText = "Usuario: " + currentUser.u;
             procesarLicencia();
-        } else { alert("Credenciales incorrectas."); }
+        } else {
+            alert("Credenciales incorrectas.");
+        }
     }
 
     function procesarLicencia() {
-        const token = sgfConfig.t;
+        const token = currentUser.t;
         document.getElementById('token-display').innerText = token;
-        
+        document.getElementById('lbl-nodo').innerText = currentUser.n;
+
         const partes = token.split('-');
         if(partes[0] === "E" && partes.length >= 4) {
             const f = partes[3]; // "20260402"
@@ -208,7 +216,7 @@
         navigator.clipboard.writeText(t).then(() => alert("Llave copiada para el mapa."));
     }
 
-    // El gatillo de autonomía ahora se dispara desde el botón de power-off
+    // GATILLO DE AUTONOMÍA AL SALIR
     function iniciarLogoutSeguro() {
         document.getElementById('force-reset').style.display = 'flex';
     }
@@ -216,15 +224,25 @@
     function guardarReset() {
         const nu = document.getElementById('nu').value;
         const np = document.getElementById('np').value;
-        if(nu.length < 4 || nu === "admin") return alert("Usuario inválido.");
-        sgfConfig.u = nu; sgfConfig.p = np;
-        localStorage.setItem('sgf_portal_v3', JSON.stringify(sgfConfig));
-        // Solo recarga la página DESPUÉS de guardar las nuevas credenciales
+        if(nu.length < 4 || nu === "admin") {
+             alert("Usuario inválido. No puede ser 'admin' ni tener menos de 4 caracteres.");
+             return;
+        }
+
+        // Encontrar el índice del usuario actual para actualizarlo
+        const userIndex = sgfData.usuarios.findIndex(u => u.u === currentUser.u && u.p === currentUser.p);
+        if (userIndex !== -1) {
+            sgfData.usuarios[userIndex].u = nu;
+            sgfData.usuarios[userIndex].p = np;
+        }
+        
+        localStorage.setItem('sgf_portal_v3_multi', JSON.stringify(sgfData));
+        // Solo recarga después de guardar
         location.reload();
     }
 
     async function enviarOrden() {
-        const tramite = document.getElementById('metodo').value;
+        const tramite = document.getElementById('tipo-tramite').value;
         const r = document.getElementById('ref').value;
         const f = document.getElementById('archivo').files[0];
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
@@ -244,11 +262,11 @@
         document.getElementById('form-inner').style.display = 'none';
         document.getElementById('verifying-display').style.display = 'block';
         
-        // Corrección de validación: Cambia el estatus a "AUDITANDO..."
         document.getElementById('status-indicator').className = "status-pill proximo";
         document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-hourglass-half"></i><br>AUDITANDO...';
-        // El envío al master ahora incluye el tipo de trámite para que sepa qué procesar
-        alert("Orden #" + id + " por '" + tramite + "' enviada al equipo de conciliación.");
+        
+        // El mensaje de confirmación ahora incluye el tipo de trámite
+        alert(`Orden #${id} por "${tramite}" enviada al equipo de conciliación.`);
     }
 </script>
 </body>
