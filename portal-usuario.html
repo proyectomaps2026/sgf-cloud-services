@@ -245,7 +245,6 @@
         }
     });
 
-    // Sistema Toast UI
     function showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -263,7 +262,6 @@
        ===================================================================== */
     async function fetchRemoteConfig() {
         try {
-            // Intenta conectarse a GitHub y descargar el archivo
             const response = await fetch(GITHUB_API_URL, { cache: 'no-store' });
             
             if (response.ok) {
@@ -274,24 +272,21 @@
                 const decodedContent = decodeURIComponent(escape(atob(cleanBase64)));
                 sgfConfig = JSON.parse(decodedContent);
                 
-                // DESBLOQUEO DEL ESCUDO: Solo si hay conexión y formato válido
                 document.body.classList.add("unlocked");
 
                 if (!currentUser) {
                     document.getElementById('login-section').style.display = 'block';
                 } else {
-                    // Actualización en caliente si ya inició sesión
                     const updatedUser = sgfConfig.usuarios.find(u => (u.user === currentUser.user || u.u === currentUser.u));
                     if (updatedUser) {
                         currentUser = updatedUser;
                         verificarEstadoAuditoria();
                         procesarLicencia();
                     } else {
-                        iniciarLogoutSeguro(); // Si el Master lo borró, lo saca
+                        iniciarLogoutSeguro(); 
                     }
                 }
             } else {
-                // Si la URL falla (No existe el JSON), el cuerpo se queda invisible / en blanco.
                 console.error("No se pudo descargar la configuración de la Nube.");
             }
         } catch(e) {
@@ -299,7 +294,6 @@
         }
     }
 
-    // Polling Automático (El Portal siempre está verificando el estado)
     fetchRemoteConfig();
     setInterval(fetchRemoteConfig, 20000);
 
@@ -310,7 +304,6 @@
         const user = document.getElementById('ui').value.trim().toLowerCase();
         const pass = document.getElementById('pi').value.trim();
 
-        // Valida contra el JSON descargado
         const foundUser = sgfConfig.usuarios.find(usr => (usr.user === user || usr.u === user) && usr.p === pass);
 
         if (foundUser) {
@@ -330,7 +323,7 @@
     }
 
     /* =====================================================================
-       3. MÓDULO DE LICENCIA Y DECODIFICADOR BASE64
+       3. NUEVO MÓDULO DE LICENCIA Y DECODIFICADOR (SGF PRO)
        ===================================================================== */
     function procesarLicencia() {
         if (!currentUser) return;
@@ -341,53 +334,78 @@
         document.getElementById('terminal-identidad').innerText = `ID: ${idMostrar}`;
 
         const partes = token.split('-');
-        if(partes[0] === "E" && partes.length >= 4) {
+        
+        // Verifica si es la Nueva Licencia Encriptada: SGF-XXXX-[BASE64]
+        if (partes[0] === "SGF" && partes.length >= 3) {
             try {
-                // Decodifica la fecha oculta en Base64
-                const f = atob(partes[3]);
-                const anio = f.substring(0,4); const mes = f.substring(4,6); const dia = f.substring(6,8);
-                const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
-                const hoy = new Date();
-                const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
+                const encryptedFinal = partes.slice(2).join('-');
+                const decodedPayload = atob(encryptedFinal); // Extrae "TOKEN_REVERT|FECHA_BASE64"
+                const payloadParts = decodedPayload.split('|');
                 
-                isLicenseActive = diff > 0;
+                if (payloadParts.length === 2) {
+                    const tokenRevertido = payloadParts[0];
+                    const fechaCodificada = payloadParts[1];
+                    
+                    // Decodifica la fecha exacta
+                    const fechaSTR = atob(fechaCodificada); // YYYY-MM-DD
+                    const vDate = new Date(`${fechaSTR}T00:00:00`);
+                    const hoy = new Date();
+                    const diff = Math.ceil((vDate - hoy) / (1000 * 60 * 60 * 24));
+                    
+                    isLicenseActive = diff > 0;
 
-                const ind = document.getElementById('status-indicator');
-                const border = document.getElementById('status-card-border');
-                document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
+                    const ind = document.getElementById('status-indicator');
+                    const border = document.getElementById('status-card-border');
+                    
+                    // Formatea YYYY-MM-DD a DD/MM/YYYY para la UI
+                    const [anio, mes, dia] = fechaSTR.split('-');
+                    document.getElementById('lbl-vence').innerText = `${dia}/${mes}/${anio}`;
 
-                if(isLicenseActive) {
-                    ind.className = "status-pill activo";
-                    ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS RESTANTES)`;
-                    border.style.borderTop = "4px solid var(--accent)";
-                } else {
-                    ind.className = "status-pill vencido";
-                    ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
-                    border.style.borderTop = "4px solid var(--danger)";
+                    if (isLicenseActive) {
+                        ind.className = "status-pill activo";
+                        ind.innerHTML = `<i class="fa-solid fa-shield-check"></i><br>ACTIVO (${diff} DÍAS RESTANTES)`;
+                        border.style.borderTop = "4px solid var(--accent)";
+                    } else {
+                        ind.className = "status-pill vencido";
+                        ind.innerHTML = '<i class="fa-solid fa-lock"></i><br>SERVICIO SUSPENDIDO / LICENCIA VENCIDA';
+                        border.style.borderTop = "4px solid var(--danger)";
+                    }
+
+                    // Configura botones según licencia
+                    const btnRenovar = document.getElementById('btn-tramite-renovar');
+                    const btnActualizar = document.getElementById('btn-tramite-actualizar');
+                    
+                    if (isLicenseActive) {
+                        btnRenovar.setAttribute('disabled', 'true');
+                        btnActualizar.removeAttribute('disabled');
+                    } else {
+                        btnActualizar.setAttribute('disabled', 'true');
+                        btnRenovar.removeAttribute('disabled');
+                    }
                 }
-
-                // Configura botones según licencia
-                const btnRenovar = document.getElementById('btn-tramite-renovar');
-                const btnActualizar = document.getElementById('btn-tramite-actualizar');
-                
-                if (isLicenseActive) {
-                    btnRenovar.setAttribute('disabled', 'true');
-                    btnActualizar.removeAttribute('disabled');
-                } else {
-                    btnActualizar.setAttribute('disabled', 'true');
-                    btnRenovar.removeAttribute('disabled');
-                }
-            } catch(e) {}
+            } catch (e) {
+                console.error("Error al desencriptar la licencia:", e);
+                isLicenseActive = false;
+                document.getElementById('status-indicator').className = "status-pill vencido";
+                document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><br>LICENCIA INVÁLIDA O CORRUPTA';
+            }
+        } else {
+            // Licencia no reconocida o requiere renovación manual
+            isLicenseActive = false;
+            document.getElementById('status-indicator').className = "status-pill vencido";
+            document.getElementById('status-indicator').innerHTML = '<i class="fa-solid fa-lock"></i><br>SIN LICENCIA VÁLIDA / REQUIERE RENOVACIÓN';
+            document.getElementById('btn-tramite-actualizar').setAttribute('disabled', 'true');
+            document.getElementById('btn-tramite-renovar').removeAttribute('disabled');
+            document.getElementById('lbl-vence').innerText = `---`;
         }
     }
 
     /* =====================================================================
-       4. BLOQUEO DE ESTADO (AUDITORÍA)
+       4. BLOQUEO DE ESTADO (AUDITORÍA INSTANTÁNEA)
        ===================================================================== */
     function verificarEstadoAuditoria() {
         if (!currentUser) return;
         
-        // Bloqueo estricto del Panel de Pagos
         if (currentUser.estado === "AUDITANDO" || currentUser.estado === "PENDIENTE") {
             document.getElementById('form-inner').style.display = 'none';
             document.getElementById('verifying-display').style.display = 'block';
@@ -398,7 +416,7 @@
     }
 
     /* =====================================================================
-       5. ESCRITURA EN GITHUB (REVERT KEY EXTRÍDA DEL JSON)
+       5. ESCRITURA EN GITHUB Y VALIDACIÓN DEL ACUERDO
        ===================================================================== */
     async function enviarOrden() {
         if (!selectedTramite) return showToast("Seleccione el tipo de trámite.", "error");
@@ -412,16 +430,22 @@
         const nombreUser = currentUser.user || currentUser.u;
         const id = "ORD-" + Math.floor(Math.random()*900000+100000);
 
-        if(!r && pago !== "acuerdo") return showToast("Indique la referencia o comprobante del pago.", "error");
+        // Si NO es acuerdo y NO puso referencia, lo bloquea. Si ES acuerdo, pasa libre.
+        if (!r && pago !== "acuerdo") return showToast("Indique la referencia o comprobante del pago.", "error");
         
-        // RESTRICCIÓN: El portal depende de que el Master haya dejado la 'cloud_access' en el JSON.
         if (!sgfConfig.cloud_access || sgfConfig.cloud_access === "") {
             return showToast("Error de Sistema: El Administrador no habilitó el canal de comunicación.", "error");
         }
 
+        // BLOQUEO INSTANTÁNEO EN LA UI (Activa la pantalla de carga sin esperar a GitHub)
+        const userIndex = sgfConfig.usuarios.findIndex(usr => (usr.user === nombreUser || usr.u === nombreUser));
+        sgfConfig.usuarios[userIndex].estado = "AUDITANDO";
+        verificarEstadoAuditoria(); 
+        
+        showToast("Enviando orden...", "info");
+
         // Subida de imagen a Cloudinary (Solo si hay archivo)
-        if(f) {
-            showToast("Adjuntando comprobante en la nube...", "info");
+        if (f) {
             const fd = new FormData();
             fd.append('file', f);
             fd.append('upload_preset', 'ordenes'); 
@@ -431,12 +455,8 @@
             } catch(e) { console.warn("Comprobante omitido por red."); }
         }
 
-        // Modificamos el estado local del usuario (El portal lo bloquea aquí mismo)
-        const userIndex = sgfConfig.usuarios.findIndex(usr => (usr.user === nombreUser || usr.u === nombreUser));
-        sgfConfig.usuarios[userIndex].estado = "AUDITANDO";
-        
+        // Se arma el registro en el JSON
         if (!Array.isArray(sgfConfig.ordenes)) sgfConfig.ordenes = [];
-        
         sgfConfig.ordenes.push({
             id: id,
             usuario: nombreUser,
@@ -447,11 +467,8 @@
             estado: 'Pendiente'
         });
 
-        // TÉCNICA DE ESPEJO: Toma la llave guardada al revés por el Master, y le da la vuelta
         const realKey = sgfConfig.cloud_access.split('').reverse().join('');
         const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(sgfConfig, null, 4))));
-
-        showToast("Enviando paquete de datos a la Central...", "info");
 
         // Disparo Final a GitHub
         try {
@@ -464,23 +481,21 @@
                 body: JSON.stringify({
                     message: `Auditoría solicitada por Terminal: ${nombreUser}`,
                     content: payloadBase64,
-                    sha: currentFileSha // Requisito de GitHub
+                    sha: currentFileSha
                 })
             });
 
             if (putReq.ok) {
                 showToast("Órden de servicio entregada con éxito.", "success");
-                // Forzamos al portal a leer su propia actualización en 2s para auto-bloquearse
                 setTimeout(() => fetchRemoteConfig(), 2000);
             } else {
-                const errJson = await putReq.json();
-                console.error("Rechazo de API:", errJson);
                 throw new Error("El servidor rechazó la escritura.");
             }
         } catch(err) {
             showToast("Hubo un error de sincronización al enviar la orden.", "error");
-            // Si falla el envío, le devolvemos el estado LIBRE para que vuelva a intentar
+            // Si falla la red, regresa el formulario
             sgfConfig.usuarios[userIndex].estado = "LIBRE";
+            verificarEstadoAuditoria();
         }
     }
 
@@ -537,7 +552,7 @@
         
         if (userIndex !== -1) {
             sgfConfig.usuarios[userIndex].user = nu;
-            sgfConfig.usuarios[userIndex].u = nu; // Fallback
+            sgfConfig.usuarios[userIndex].u = nu; 
             sgfConfig.usuarios[userIndex].p = np;
             
             const realKey = sgfConfig.cloud_access.split('').reverse().join('');
