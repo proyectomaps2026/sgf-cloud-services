@@ -4,7 +4,7 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2026-05-03",
             "u": "alcaldia",
             "p": "admin",
@@ -20,6 +20,15 @@
             "referencia": "N/A",
             "fecha": "2026-04-03T21:05:05.925Z",
             "estado": "Aprobada"
+        },
+        {
+            "id": "ORD-184392",
+            "usuario": "alcaldia",
+            "tramite": "Renovar Licencia Vencida",
+            "metodo": "acuerdo",
+            "referencia": "N/A",
+            "fecha": "2026-04-03T21:06:16.447Z",
+            "estado": "Pendiente"
         }
     ]
 }
