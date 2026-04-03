@@ -7,73 +7,59 @@
     <title>SGF MASTER | Central de Validación de Datos</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; --blue-pro: #1976d2; }
+        :root { --primary: #0062ff; --dark: #0a0a0c; --card: #151518; --text: #e0e0e0; --success: #00c853; --warning: #ffcc00; --danger: #ff3333; }
         body { font-family: 'Segoe UI', Inter, sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
         
-        /* Sidebar */
         .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #222; padding: 20px; position: fixed; box-sizing: border-box;}
-        .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
+        .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
         .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
 
-        /* Main Content */
         .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
         
-        /* Stats */
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #222; position: relative; overflow: hidden; }
-        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
-        .stat-card.stat-warn::before { background: var(--warning); }
-        .stat-card.stat-success::before { background: var(--success); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #222; }
         .stat-card h3 { margin: 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
         .stat-card p { font-size: 28px; margin: 10px 0 0 0; font-weight: bold; }
 
-        /* Table Design */
         .table-container { background: var(--card); border-radius: 12px; border: 1px solid #222; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #111; padding: 18px 20px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222; }
+        th { background: #111; padding: 18px 20px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
         td { padding: 18px 20px; border-bottom: 1px solid #222; font-size: 13px; vertical-align: middle; }
         tr:hover td { background: #1a1a1f; }
         
-        .status-pill { padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .status-active { background: rgba(0, 200, 83, 0.1); color: var(--success); border: 1px solid rgba(0, 200, 83, 0.2); }
-        .status-waiting { background: rgba(255, 204, 0, 0.1); color: var(--warning); border: 1px solid rgba(255, 204, 0, 0.2); }
-        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.2); }
-        
-        /* 4. Trámites Específicos - Badges */
-        .badge-urgente { background: rgba(255, 51, 51, 0.1); color: var(--danger); border: 1px solid rgba(255, 51, 51, 0.3); }
-        .badge-normal { background: rgba(25, 118, 210, 0.1); color: var(--blue-pro); border: 1px solid rgba(25, 118, 210, 0.3); }
+        .status-pill { padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .status-active { background: rgba(0, 200, 83, 0.1); color: var(--success); }
+        .status-waiting { background: rgba(255, 204, 0, 0.1); color: var(--warning); }
+        .status-expired { background: rgba(255, 51, 51, 0.1); color: var(--danger); }
+        .badge-urgente { background: rgba(255, 51, 51, 0.1); color: var(--danger); }
+        .badge-normal { background: rgba(0, 98, 255, 0.1); color: var(--primary); }
 
-        /* Actions */
         .btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: #0050d0; }
         .btn-action { background: #111; color: #ccc; border: 1px solid #333; margin-right: 5px; }
-        .btn-action:hover { border-color: var(--primary); color: white; background: #1a1a1f; }
-        .btn-danger { background: var(--danger); color: white; margin-right: 5px;}
-        .btn-danger:hover { background: #c00; }
+        .btn-action:hover { border-color: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
         
-        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 400px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .modal-content { background: var(--card); padding: 35px; border-radius: 16px; width: 420px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         .modal-content h3 { margin-top: 0; color: white; font-size: 18px; }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
-        input:focus, select:focus { border-color: var(--primary); }
+        input, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; font-size: 13px; }
+        textarea { height: 200px; font-family: monospace; resize: none; }
+        input:focus, textarea:focus { border-color: var(--primary); }
 
-        /* 5. Notificaciones Toast */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 25px; border-radius: 8px; color: white; font-size: 13px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease forwards; display: flex; align-items: center; gap: 10px; }
         .toast-success { background: var(--success); color: #000; }
         .toast-error { background: var(--danger); }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* 4. Visor de Comprobantes (Hover) */
         .img-container { position: relative; display: inline-block; }
-        .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: crosshair; transition: 0.2s; background: #111; }
-        .img-container:hover .img-thumb { border-color: var(--primary); }
-        .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); right: 60px; top: -150px; background: #111; }
+        .img-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #333; cursor: pointer; }
+        .img-preview { display: none; position: absolute; z-index: 1000; width: 350px; border: 2px solid var(--primary); border-radius: 8px; right: 60px; top: -150px; }
         .img-container:hover .img-preview { display: block; }
     </style>
 </head>
@@ -83,37 +69,20 @@
 
 <div class="sidebar">
     <div class="logo"><i class="fa-solid fa-shield-halved"></i> SGF MASTER</div>
-    <div class="nav-item active" onclick="showTab('clientes')" id="nav-clientes"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
-    <div class="nav-item" onclick="showTab('pagos')" id="nav-pagos"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
+    <div class="nav-item active" onclick="showTab('clientes')"><i class="fa-solid fa-server"></i> Gestión de Terminales</div>
+    <div class="nav-item" onclick="showTab('pagos')"><i class="fa-solid fa-file-invoice"></i> Auditoría de Órdenes</div>
+    <!-- 3. Puente de Conexión -->
+    <div class="nav-item" onclick="exportarConfig()"><i class="fa-solid fa-code-branch"></i> Exportar Config.js</div>
 </div>
 
 <div class="main" id="view-clientes">
     <div class="header">
         <h1>Terminales de Datos</h1>
-        <div>
-            <!-- 2. Botón de exportación -->
-            <button class="btn btn-action" onclick="exportarConfig()"><i class="fa-solid fa-download"></i> Exportar DB</button>
-            <button class="btn btn-primary" onclick="openModal('modalNuevo')"><i class="fa-solid fa-plus"></i> Registrar Terminal</button>
-        </div>
+        <button class="btn btn-primary" onclick="openModal('modalNuevo')"><i class="fa-solid fa-plus"></i> Registrar Terminal</button>
     </div>
-
-    <div class="grid">
-        <div class="stat-card"><h3>Total Terminales</h3><p id="statTotal">0</p></div>
-        <div class="stat-card stat-warn"><h3>Auditorías Pendientes</h3><p id="statPend">0</p></div>
-        <div class="stat-card stat-success"><h3>Validaciones (Mes)</h3><p id="statRecaudo">0</p></div>
-    </div>
-
     <div class="table-container">
         <table>
-            <thead>
-                <tr>
-                    <th>USUARIO / TERMINAL</th>
-                    <th>ID DE TERMINAL</th>
-                    <th>ESTADO EN PORTAL</th>
-                    <th>VENCIMIENTO</th>
-                    <th style="text-align: right;">CONTROL DE SEGURIDAD</th>
-                </tr>
-            </thead>
+            <thead><tr><th>MUNICIPIO / TERMINAL</th><th>ID DE TERMINAL</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
             <tbody id="listaNodos"></tbody>
         </table>
     </div>
@@ -122,271 +91,177 @@
 <div class="main" id="view-pagos" style="display:none;">
     <div class="header">
         <h1>Auditoría de Trámites</h1>
+        <!-- 2. Auditoría de Órdenes (Reset) -->
+        <button class="btn btn-danger" onclick="limpiarHistorial()"><i class="fa-solid fa-broom"></i> Limpiar Historial de Órdenes</button>
     </div>
     <div class="table-container">
         <table>
-            <thead>
-                <tr>
-                    <th>FECHA</th>
-                    <th>TERMINAL</th>
-                    <th>TIPO DE SOLICITUD</th>
-                    <th>MÉTODO / REF</th>
-                    <th>COMPROBANTE</th>
-                    <th style="text-align: right;">RESOLUCIÓN</th>
-                </tr>
-            </thead>
+            <thead><tr><th>FECHA</th><th>TERMINAL</th><th>TIPO DE SOLICITUD</th><th>COMPROBANTE</th><th>RESOLUCIÓN</th></tr></thead>
             <tbody id="cuerpoPagos"></tbody>
         </table>
     </div>
 </div>
 
-<!-- Modal Registro -->
-<div id="modalNuevo" class="modal">
-    <div class="modal-content">
-        <h3>Alta de Nuevo Terminal</h3>
-        <input type="text" id="n_user" placeholder="Usuario ID (Ej: alcaldia)">
-        <input type="text" id="n_pass" placeholder="Clave Base" value="admin">
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-primary" onclick="crearTerminal()" style="flex:1">Crear Acceso</button>
-            <button class="btn btn-action" onclick="closeModal('modalNuevo')">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-<!-- 1. Modal Generador "Revert" -->
-<div id="modalToken" class="modal">
-    <div class="modal-content">
-        <h3>Aprobar y Generar Licencia</h3>
-        <p style="font-size:12px; color:#888; margin-bottom: 20px;">Terminal: <b id="lbl-token-user" style="color:white;">---</b></p>
-        
-        <label style="font-size: 11px; color: #888; text-transform: uppercase;">Extensión de Servicio</label>
-        <select id="dias_extension">
-            <option value="30">Licencia Mensual (+30 Días)</option>
-            <option value="90">Licencia Trimestral (+90 Días)</option>
-            <option value="365">Licencia Anual (+365 Días)</option>
-        </select>
-
-        <input type="hidden" id="token_order_id">
-        <input type="hidden" id="token_user_id">
-
-        <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-primary" onclick="aprobarYEnviar()" style="flex:1"><i class="fa-solid fa-paper-plane"></i> APROBAR Y ENVIAR</button>
-            <button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button>
-        </div>
-    </div>
-</div>
+<div id="modalNuevo" class="modal"><div class="modal-content"><h3>Alta de Nuevo Terminal</h3><input type="text" id="n_muni" placeholder="Nombre Municipio (Ej: Michelena)"><input type="text" id="n_user" placeholder="Usuario de Acceso"><input type="text" id="n_id" placeholder="ID de Terminal (Ej: MICH-01)"><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn btn-primary" onclick="crearNodo()" style="flex:1">Crear Acceso</button><button class="btn btn-action" onclick="closeModal('modalNuevo')">Cerrar</button></div></div></div>
+<div id="modalToken" class="modal"><div class="modal-content"><h3>Generador de Licencia v3.0</h3><input type="text" id="semilla" placeholder="Semilla de Seguridad (Ej: TACHIRA2026)"><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn btn-primary" id="btnActivar" onclick="activarNodoRemoto()" style="flex:1">Inyectar Licencia</button><button class="btn btn-action" onclick="closeModal('modalToken')">Cancelar</button></div></div></div>
+<!-- 3. Modal Exportar -->
+<div id="modalExport" class="modal"><div class="modal-content"><h3>Código de Configuración para Portal</h3><p style="font-size:12px; color:#888;">Copie y pegue este bloque en el archivo `config.js` del portal de destino.</p><textarea id="export-code" readonly></textarea><button class="btn btn-action" onclick="closeModal('modalExport')">Cerrar</button></div></div>
 
 <script>
-    // 5. Seguridad y Notificaciones
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    const threshold = 160;
-    setInterval(() => {
-        if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
-            window.location.href = "about:blank";
-        }
-    }, 1000);
+    // 5. Seguridad Anti-Intrusos
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    setInterval(() => { if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) window.location.href = "about:blank"; }, 1000);
 
+    // 5. Sistema de Notificaciones Toast
     function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'slideIn 0.3s ease reverse forwards';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        const c = document.getElementById('toast-container'), t = document.createElement('div');
+        t.className = `toast toast-${type}`;
+        t.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> <span>${message}</span>`;
+        c.appendChild(t);
+        setTimeout(() => { t.style.animation = 'slideIn 0.3s ease reverse forwards'; setTimeout(() => t.remove(), 300); }, 3000);
     }
-
-    // BASE DE DATOS COMPARTIDA
-    const dbKey = 'sgf_cloud_db_v12';
-    let sgfConfig = { usuarios: [], ordenes: [] };
-
-    function loadDB() {
-        try {
-            let stored = localStorage.getItem(dbKey);
-            if(stored) sgfConfig = JSON.parse(atob(stored));
-        } catch(e) { console.error("Error DB"); }
-    }
-
-    function saveDB() {
-        localStorage.setItem(dbKey, btoa(JSON.stringify(sgfConfig)));
-        loadDB();
-        renderNodos();
-        renderHistorial();
-    }
+    
+    let nodosDB = JSON.parse(localStorage.getItem('sgf_master_nodos_v2') || '[]');
+    let currentIdx = null;
 
     function showTab(tab) {
         document.querySelectorAll('.main').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('view-' + tab).style.display = 'block';
-        document.getElementById('nav-' + tab).classList.add('active');
-        loadDB();
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.nav-item[onclick*="${tab}"]`).classList.add('active');
         if(tab === 'pagos') renderHistorial();
-        else renderNodos();
     }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // RENDERIZADO DE TABLAS
-    function calcularEstado(token) {
-        if(!token || token === "---" || token.split('-').length < 4) return { class: 'status-expired', txt: 'S/ LICENCIA' };
-        const f = token.split('-')[3];
-        const anio = f.substring(0,4), mes = f.substring(4,6), dia = f.substring(6,8);
-        const vDate = new Date(`${anio}-${mes}-${dia}T00:00:00`);
-        const diff = Math.ceil((vDate - new Date()) / (1000 * 60 * 60 * 24));
-        if(diff > 0) return { class: 'status-active', txt: `ACTIVO (${diff} D)` };
-        return { class: 'status-expired', txt: 'VENCIDO' };
+    // 1. Gestión de Nodos y Terminales (Limpieza Total)
+    function crearNodo() {
+        const nodo = {
+            n: document.getElementById('n_muni').value, // nombre
+            u: document.getElementById('n_user').value, // usuario
+            p: 'admin', // password por defecto
+            id: document.getElementById('n_id').value, // ID de Terminal
+            token: '---'
+        };
+        if(!nodo.n || !nodo.u || !nodo.id) return showToast("Complete todos los campos.", "error");
+        nodosDB.push(nodo);
+        save();
+        closeModal('modalNuevo');
+        showToast("Terminal creado. Clave por defecto: admin", "success");
     }
 
-    function formatearFecha(token) {
-        if(!token || token.split('-').length < 4) return '---';
-        const f = token.split('-')[3];
-        return `${f.substring(6,8)}/${f.substring(4,6)}/${f.substring(0,4)}`;
+    function deleteNode(idx) {
+        if(confirm(`¿Está seguro de eliminar el acceso para [${nodosDB[idx].n}]? Esta acción es irreversible.`)) {
+            const nombre = nodosDB[idx].n;
+            nodosDB.splice(idx, 1);
+            save();
+            showToast(`Terminal ${nombre} eliminado.`, "error");
+        }
+    }
+
+    // 4. Generador de Licencia con Fecha Encriptada
+    function prepararToken(idx) {
+        currentIdx = idx;
+        openModal('modalToken');
+    }
+
+    function activarNodoRemoto() {
+        const semilla = document.getElementById('semilla').value;
+        if(!semilla) return showToast("Se requiere una semilla de seguridad.", "error");
+
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        const fechaInyectada = d.toISOString().split('T')[0].replace(/-/g, ""); // YYYYMMDD
+        const fechaB64 = btoa(fechaInyectada); // Encriptar en Base64
+
+        const basura = Math.random().toString(36).substring(2, 6).toUpperCase();
+        // Token compatible con portal que decodifica Base64
+        const tokenFinal = `E-${basura}-${nodosDB[currentIdx].id}-${fechaB64}-${semilla.toUpperCase()}`;
+        
+        nodosDB[currentIdx].token = tokenFinal;
+        save();
+        closeModal('modalToken');
+        showToast("Licencia generada y asignada.", "success");
     }
 
     function renderNodos() {
         const list = document.getElementById('listaNodos');
         list.innerHTML = "";
-        let pendingAudits = sgfConfig.ordenes.filter(o => o.estado === 'Pendiente').length;
-
-        sgfConfig.usuarios.forEach((u) => {
-            if(u.u === 'admin') return;
-            const estadoTkn = calcularEstado(u.t);
-            let portalStatus = u.estado === "PENDIENTE" ? 
-                `<span class="status-pill status-waiting">AUDITANDO...</span>` : 
-                `<span class="status-pill ${estadoTkn.class}">${estadoTkn.txt}</span>`;
-            
+        nodosDB.forEach((n, i) => {
+            const estado = (n.token !== '---') ? '<span class="status-pill status-active">ACTIVO</span>' : '<span class="status-pill status-expired">INACTIVO</span>';
             list.innerHTML += `
                 <tr>
-                    <td><b style="color:white; font-size:14px;">${u.u.toUpperCase()}</b></td>
-                    <td><code style="color:var(--primary); font-size:12px;">ID-${u.u.toUpperCase()}-2026</code></td>
-                    <td>${portalStatus}</td>
-                    <td style="color:#aaa;">${formatearFecha(u.t)}</td>
-                    <td style="text-align: right;">
-                        <button class="btn btn-action" onclick="prepararRenovacionManual('${u.u}')" title="Generar Licencia Manual"><i class="fa-solid fa-key"></i></button>
-                        <button class="btn btn-action" onclick="forzarReset('${u.u}')" title="Forzar Reset de Seguridad"><i class="fa-solid fa-user-lock"></i></button>
-                        <button class="btn btn-danger" onclick="eliminarTerminal('${u.u}')" title="Eliminar Terminal"><i class="fa-solid fa-trash-can"></i></button>
+                    <td><b>${n.n}</b><br><small style="color:#555">User: ${n.u}</small></td>
+                    <td><code style="color:var(--primary)">${n.id}</code></td>
+                    <td>${estado}</td>
+                    <td>
+                        <button class="btn btn-action" onclick="prepararToken(${i})" title="Generar Licencia"><i class="fa-solid fa-key"></i></button>
+                        <button class="btn btn-danger" onclick="deleteNode(${i})" title="Eliminar Nodo"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 </tr>
             `;
         });
-        document.getElementById('statTotal').innerText = sgfConfig.usuarios.length > 0 ? sgfConfig.usuarios.length - 1 : 0;
-        document.getElementById('statPend').innerText = pendingAudits;
-        document.getElementById('statRecaudo').innerText = sgfConfig.ordenes.filter(o => o.estado === 'Aprobada').length;
     }
 
+    // 2 & 4. Auditoría de Órdenes
     function renderHistorial() {
+        const bandeja = JSON.parse(localStorage.getItem('bandeja_auditoria') || '[]');
         const cuerpo = document.getElementById('cuerpoPagos');
         cuerpo.innerHTML = "";
-        const ordenesInversas = [...sgfConfig.ordenes].reverse();
-        ordenesInversas.forEach(p => {
-            let badgeTramite = p.tramite.includes("Vencida") ? 'badge-urgente' : 'badge-normal';
-            let imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
-            let thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.src='https://via.placeholder.com/50?text=S/IMG'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
-            let actionBtn = p.estado === 'Pendiente' ? `<button class="btn btn-primary" onclick="abrirAprobacion('${p.id}', '${p.usuario}')">APROBAR</button>` : `<span style="color:#555; font-size:11px; font-weight:bold;"><i class="fa-solid fa-check"></i> PROCESADA</span>`;
-            let dateObj = new Date(p.fecha);
-            let dateStr = `${dateObj.getDate().toString().padStart(2,'0')}/${(dateObj.getMonth()+1).toString().padStart(2,'0')} ${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+        bandeja.forEach(p => {
+            const tipoTramite = p.tramite || 'No especificado';
+            const badgeClass = tipoTramite.includes('Vencida') ? 'badge-urgente' : 'badge-normal';
+            const imgUrl = `https://res.cloudinary.com/drxiko8l4/image/upload/pago_${p.id}_${p.usuario}.jpg`;
+            const thumbHTML = `<div class="img-container"><img src="${imgUrl}" class="img-thumb" onerror="this.style.display='none'"><img src="${imgUrl}" class="img-preview" onerror="this.style.display='none'"></div>`;
 
-            cuerpo.innerHTML += `<tr><td style="color:#888;">${dateStr}</td><td><b style="color:white;">${p.usuario.toUpperCase()}</b></td><td><span class="status-pill ${badgeTramite}">${p.tramite}</span></td><td><span style="color:var(--primary); font-weight:bold;">${p.metodo}</span><br><small style="color:#aaa;">Ref: ${p.referencia}</small></td><td>${thumbHTML}</td><td style="text-align: right;">${actionBtn}</td></tr>`;
+            cuerpo.innerHTML += `
+                <tr>
+                    <td>${new Date(p.fecha).toLocaleString()}</td>
+                    <td><b>${p.usuario.toUpperCase()}</b></td>
+                    <td><span class="status-pill ${badgeClass}">${tipoTramite}</span></td>
+                    <td>${thumbHTML}</td>
+                    <td><button class="btn btn-primary" onclick="showToast('Función de aprobación en desarrollo.', 'error')">APROBAR</button></td>
+                </tr>
+            `;
         });
     }
 
-    // GESTIÓN DE TERMINALES
-    function crearTerminal() {
-        const u = document.getElementById('n_user').value.toLowerCase();
-        if(!u) return showToast("Ingrese un ID de usuario.", "error");
-        if(sgfConfig.usuarios.find(usr => usr.u === u)) return showToast("El usuario ya existe.", "error");
-        sgfConfig.usuarios.push({ u, p: 'admin', t: `E-NEW-${u.toUpperCase()}-20200101`, estado: "LIBRE", token_orden: "" });
-        saveDB();
-        closeModal('modalNuevo');
-        showToast("Terminal registrado exitosamente.", "success");
-    }
-
-    function forzarReset(user) {
-        if(confirm(`¿Forzar reset de seguridad para el terminal [${user}]? La cuenta volverá a admin/admin.`)) {
-            const idx = sgfConfig.usuarios.findIndex(u => u.u === user);
-            if(idx !== -1) {
-                sgfConfig.usuarios[idx].p = 'admin';
-                saveDB();
-                showToast(`Reset de seguridad aplicado al terminal ${user}.`, 'success');
-            }
-        }
-    }
-
-    // 3. Gestión de Usuarios (Eliminar)
-    function eliminarTerminal(user) {
-        if (confirm(`¿Está seguro de ELIMINAR permanentemente el acceso del terminal [${user}]?`)) {
-            sgfConfig.usuarios = sgfConfig.usuarios.filter(u => u.u !== user);
-            saveDB();
-            showToast(`Terminal ${user} ha sido eliminado.`, 'error');
+    function limpiarHistorial() {
+        if(confirm("¿Está seguro de limpiar todo el historial de órdenes?")) {
+            localStorage.removeItem('bandeja_auditoria');
+            renderHistorial();
+            showToast("Historial de órdenes limpiado.", "success");
         }
     }
     
-    // 1. LÓGICA DE LICENCIAS
-    function abrirAprobacion(orderId, userId) {
-        document.getElementById('lbl-token-user').innerText = userId.toUpperCase();
-        document.getElementById('token_order_id').value = orderId;
-        document.getElementById('token_user_id').value = userId;
-        openModal('modalToken');
-    }
-
-    function prepararRenovacionManual(userId) {
-        abrirAprobacion("MANUAL", userId);
-        document.getElementById('lbl-token-user').innerText += " (MANUAL)";
-    }
-
-    function aprobarYEnviar() {
-        const userId = document.getElementById('token_user_id').value;
-        const orderId = document.getElementById('token_order_id').value;
-        const dias = parseInt(document.getElementById('dias_extension').value);
-        const usrIdx = sgfConfig.usuarios.findIndex(u => u.u === userId);
-
-        if(usrIdx === -1) return showToast("Usuario no encontrado", "error");
-
-        // Automatización de Fecha (YYYYMMDD) - El espejo de la lógica del portal
-        let d = new Date();
-        d.setDate(d.getDate() + dias);
-        let anio = d.getFullYear();
-        let mes = String(d.getMonth() + 1).padStart(2, '0');
-        let dia = String(d.getDate()).padStart(2, '0');
-        let fechaExt = `${anio}${mes}${dia}`;
-        
-        let basura = Math.random().toString(36).substring(2, 6).toUpperCase();
-        let nuevoToken = `E-${basura}-${userId.toUpperCase()}-${fechaExt}`; // Formato compatible
-
-        // Inyectar en Base de Datos
-        sgfConfig.usuarios[usrIdx].t = nuevoToken;
-        sgfConfig.usuarios[usrIdx].estado = "LIBRE";
-
-        // Actualizar la orden
-        if (orderId !== "MANUAL") {
-            const ordIdx = sgfConfig.ordenes.findIndex(o => o.id === orderId);
-            if(ordIdx !== -1) sgfConfig.ordenes[ordIdx].estado = "Aprobada";
-        }
-        
-        saveDB();
-        closeModal('modalToken');
-        showToast(`Licencia generada. Servicio liberado para ${userId.toUpperCase()}.`, "success");
-    }
-
-    // 2. Conexión de Datos (El Puente)
+    // 3. Puente de Conexión (Generador de Config)
     function exportarConfig() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sgfConfig, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "sgf_cloud_db.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-        showToast("Base de datos exportada. Sube este archivo al servidor/repositorio.", "success");
+        const usuariosParaPortal = nodosDB.map(nodo => ({
+            u: nodo.u,
+            p: nodo.p,
+            n: nodo.n,
+            t: nodo.token // El token ahora es generado y compatible
+        }));
+        
+        // Agregar el usuario admin por defecto si no existe
+        if (!usuariosParaPortal.some(u => u.u === 'admin')) {
+             usuariosParaPortal.unshift({ u: 'admin', p: 'admin', n: 'Sistema Central', t: 'E-ROOT-ADMIN-20991231-MASTERKEY'});
+        }
+
+        const configObject = { usuarios: usuariosParaPortal };
+        const codeString = `const sgfConfig = ${JSON.stringify(configObject, null, 2)};`;
+        
+        document.getElementById('export-code').value = codeString;
+        openModal('modalExport');
     }
 
-    // Inicializar
-    loadDB();
-    showTab('clientes');
+    function save() {
+        localStorage.setItem('sgf_master_nodos_v2', JSON.stringify(nodosDB));
+        renderNodos();
+    }
+
+    renderNodos();
 </script>
 </body>
 </html>
