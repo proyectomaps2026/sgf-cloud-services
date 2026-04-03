@@ -254,29 +254,28 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     /* =====================================================================
-       A. CONFIGURACIÓN DEL PUENTE (LECTURA Y ESCRITURA INVISIBLE)
+       SISTEMA DE SINCRONIZACIÓN PROFESIONAL (SOLUCIÓN ERROR 422)
        ===================================================================== */
+
     async function cargarDatosNube() {
-        const btn = document.getElementById('btn-force-sync');
+        const statusInd = document.getElementById('sync-status');
         const semillaRevertida = localStorage.getItem('semilla_revert');
         if (!semillaRevertida) return;
 
-        // Solo se usa para los Headers
         const realKey = semillaRevertida.split('').reverse().join('');
-        const statusInd = document.getElementById('sync-status');
         
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Leyendo...';
-        btn.style.color = '#fff';
-
         try {
             const response = await fetch(GITHUB_API_URL, {
                 method: "GET",
-                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+                headers: { 
+                    "Authorization": "token " + realKey, 
+                    "Cache-Control": "no-cache" 
+                }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
-                currentSha = data.sha; 
+                currentSha = data.sha; // Guardamos el sello actual [cite: 106]
                 
                 const cleanBase64 = data.content.replace(/\s/g, ''); 
                 const cloudState = JSON.parse(decodeURIComponent(escape(atob(cleanBase64))));
@@ -285,16 +284,13 @@
                 sgfConfig.ordenes = Array.isArray(cloudState.ordenes) ? cloudState.ordenes : [];
                 
                 saveDB();
-                
                 statusInd.className = 'status-online';
                 statusInd.innerHTML = '<i class="fa-solid fa-cloud-check"></i> Conexión Establecida';
             }
         } catch (error) {
             statusInd.className = 'status-offline';
-            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo Sync`;
+            statusInd.innerHTML = `<i class="fa-solid fa-cloud-xmark"></i> Fallo de Lectura`;
         }
-
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Forzar Escritura Nube';
     }
 
     setInterval(cargarDatosNube, 15000);
@@ -304,79 +300,58 @@
         const semillaRevertida = localStorage.getItem('semilla_revert');
         
         if (!semillaRevertida) {
-            alert("Acción Denegada: Falta configurar la Llave GitHub en el menú.");
-            return;
+            return showToast("Error: Configure la Llave GitHub primero.", "error");
         }
 
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Escribiendo...';
-        btn.style.backgroundColor = '#f57c00'; 
-        btn.style.color = '#fff';
-
-        // Solo se usa para los Headers
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+        btn.style.backgroundColor = '#f57c00';
         const realKey = semillaRevertida.split('').reverse().join('');
-        
-        if (!sgfConfig.usuarios.some(u => (u.user === 'admin' || u.u === 'admin'))) {
-             sgfConfig.usuarios.unshift({ user: 'admin', u: 'admin', p: 'admin', t: generarLicencia('admin', 3650), estado: "LIBRE", vencimiento: "2099-12-31" });
-        }
-
-        // El payload incluye cloud_access para que el Portal pueda leerlo luego
-        const payloadToUpload = {
-            cloud_access: semillaRevertida,
-            usuarios: sgfConfig.usuarios,
-            ordenes: sgfConfig.ordenes
-        };
-
-        const payloadBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
-
-        // Recuperar SHA preventivo si falta (Rescate SHA)
-        if (!currentSha) {
-            try {
-                const getReq = await fetch(GITHUB_API_URL, {
-                    method: "GET",
-                    headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
-                });
-                if (getReq.ok) {
-                    const getRes = await getReq.json();
-                    currentSha = getRes.sha;
-                }
-            } catch(e) {}
-        }
-
-        const bodyData = {
-            message: "SGF Master: Sincronización de Licencias",
-            content: payloadBase64
-        };
-        
-        if (currentSha) bodyData.sha = currentSha;
 
         try {
-            const putReq = await fetch(GITHUB_API_URL, {
+            // PASO 1: RESCATE DE SHA (Evita el Error 422) [cite: 116, 126]
+            const getRes = await fetch(GITHUB_API_URL, {
+                method: "GET",
+                headers: { "Authorization": "token " + realKey, "Cache-Control": "no-cache" }
+            });
+            if (!getRes.ok) throw new Error("No se pudo obtener el SHA de la nube.");
+            const dataGet = await getRes.json();
+            const freshSha = dataGet.sha;
+
+            // PASO 2: PREPARAR EL PAQUETE [cite: 115, 116]
+            const payloadToUpload = {
+                cloud_access: semillaRevertida,
+                usuarios: sgfConfig.usuarios,
+                ordenes: sgfConfig.ordenes
+            };
+            const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadToUpload, null, 4))));
+
+            // PASO 3: ESCRITURA FINAL
+            const putRes = await fetch(GITHUB_API_URL, {
                 method: "PUT",
                 headers: { 
                     "Authorization": "token " + realKey,
                     "Content-Type": "application/json" 
                 },
-                body: JSON.stringify(bodyData)
+                body: JSON.stringify({
+                    message: "SGF Master: Sincronización de Licencias de Mapa",
+                    content: contentBase64,
+                    sha: freshSha // Sello de seguridad [cite: 120]
+                })
             });
 
-            if(putReq.ok) {
-                const putRes = await putReq.json();
-                currentSha = putRes.content.sha; // Renovar SHA tras éxito
-
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Nube Sincronizada';
+            if (putRes.ok) {
+                const putData = await putRes.json();
+                currentSha = putData.content.sha; // Actualizamos para la próxima vuelta [cite: 123]
+                showToast("Nube Actualizada Correctamente", "success");
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Éxito';
                 btn.style.backgroundColor = '#00c853';
-                document.getElementById('sync-status').className = 'status-online';
-                document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-check"></i> Sincronizado';
             } else {
-                const errData = await putReq.json();
-                alert(`Error HTTP ${putReq.status}\nMensaje de GitHub: ${errData.message}`);
-                btn.innerHTML = `<i class="fa-solid fa-xmark"></i> Error ${putReq.status}`;
-                btn.style.backgroundColor = '#d32f2f';
-                currentSha = null; 
+                const err = await putRes.json();
+                throw new Error(err.message);
             }
         } catch (error) {
-            alert(`Fallo de Red o Conexión: ${error.message}`);
-            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Fallo Red';
+            showToast("Fallo: " + error.message, "error");
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error 422';
             btn.style.backgroundColor = '#d32f2f';
         }
 
@@ -549,10 +524,13 @@
                 let month = String(d.getMonth()+1).padStart(2,'0');
                 let day = String(d.getDate()).padStart(2,'0');
 
+                // Sobreescritura total para regresar a admin / admin (Regla 3)
+                sgfConfig.usuarios[idx].user = 'admin';
+                sgfConfig.usuarios[idx].u = 'admin';
                 sgfConfig.usuarios[idx].p = 'admin';
                 sgfConfig.usuarios[idx].estado = 'LIBRE';
                 sgfConfig.usuarios[idx].vencimiento = `${year}-${month}-${day}`;
-                sgfConfig.usuarios[idx].t = generarLicencia(userName, 7);
+                sgfConfig.usuarios[idx].t = generarLicencia('admin', 7);
 
                 saveDB();
                 showToast(`Terminal ${userName} reseteado a fábrica.`, 'success');
