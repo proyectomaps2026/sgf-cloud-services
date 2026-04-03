@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 6. Limpieza de Metadatos -->
+    <!-- 5. Limpieza de Metadatos -->
     <title>SGF CLOUD | Servicios Globales</title>
     <meta property="og:title" content="SGF CLOUD | Servicios Globales">
     <meta property="og:description" content="Gestión segura de infraestructura y licencias de datos.">
@@ -28,7 +28,7 @@
             overflow: hidden; margin: 20px; position: relative;
         }
 
-        /* 4. Notificaciones Profesionales (Toast UI) */
+        /* 3. Notificaciones Profesionales (Toast UI) */
         #toast-container {
             position: fixed; top: 20px; right: 20px; z-index: 9999;
             display: flex; flex-direction: column; gap: 10px;
@@ -137,14 +137,14 @@
         <div class="input-group"><input type="text" id="nu" placeholder="Nuevo Usuario" onkeypress="handleEnter(event, guardarReset)"></div>
         <div class="input-group"><input type="password" id="np" placeholder="Nueva Contraseña" onkeypress="handleEnter(event, guardarReset)"></div>
         <button class="btn-main" onclick="guardarReset()">GUARDAR CREDENCIALES</button>
-        <!-- 3. Botón Volver -->
-        <button class="btn-main btn-secondary" onclick="cerrarConfiguracion()"><i class="fa-solid fa-arrow-left"></i> VOLVER / ATRÁS</button>
+        <!-- 1. Botón Volver Inteligente -->
+        <button id="btn-volver" class="btn-main btn-secondary" onclick="cerrarConfiguracion()"><i class="fa-solid fa-arrow-left"></i> CANCELAR / VOLVER</button>
     </div>
 
     <div id="login-section">
         <div class="logo-header"><i class="fa-solid fa-server"></i> SGF CLOUD</div>
         <div class="subtitle">Portal seguro para la gestión de Hosting y Licencias API</div>
-        <!-- 3. UX: Tecla Enter -->
+        <!-- 2. UX: Tecla Enter -->
         <div class="input-group"><input type="text" id="ui" placeholder="USUARIO" onkeypress="handleEnter(event, validarLogin)"></div>
         <div class="input-group"><input type="password" id="pi" placeholder="Contraseña" onkeypress="handleEnter(event, validarLogin)"></div>
         <button class="btn-main" onclick="validarLogin()">AUTENTICAR</button>
@@ -177,7 +177,7 @@
                             <i class="fa-solid fa-copy"></i> COPIAR PARA MAPA
                         </button>
                     </div>
-                    <!-- 5. Identidad ID Terminal -->
+                    <!-- Identidad ID Terminal -->
                     <span id="terminal-identidad">ID: ---</span>
                     <p style="font-size: 10px; color: #999; margin-top: 10px; text-align: center;">* Esta llave debe pegarse en el Administrador del Mapa.</p>
                 </div>
@@ -214,6 +214,7 @@
 
                     <div id="pay-details" class="pay-details-box"></div>
                     <input type="hidden" id="metodo-pago-seleccionado" value="">
+                    <!-- 2. UX: Tecla Enter -->
                     <input type="text" id="ref" placeholder="Nro de Referencia / Comprobante" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box; margin-bottom: 5px;" onkeypress="handleEnter(event, enviarOrden)">
                     
                     <label class="file-upload">
@@ -227,7 +228,8 @@
                 <div id="verifying-display">
                     <i class="fa-solid fa-cloud-arrow-up fa-bounce" style="font-size: 40px; color: var(--blue-pro); margin-bottom: 15px;"></i>
                     <h3 style="color:var(--primary); margin:0 0 10px 0;">SGF CLOUD</h3>
-                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">Su solicitud está siendo auditada.<br>Espere la liberación del servicio.</p>
+                    <!-- 4. Persistencia de Validación -->
+                    <p style="font-size: 13px; color: var(--text-muted); font-weight: bold; margin: 0;">PROCESANDO VALIDACIÓN...<br>Espere la liberación del servicio.</p>
                 </div>
             </div>
         </div>
@@ -235,7 +237,7 @@
 </div>
 
 <script>
-    // 5. Seguridad Anti-Sources
+    // Seguridad Anti-Sources
     document.addEventListener('contextmenu', event => event.preventDefault());
     
     const threshold = 160;
@@ -251,7 +253,7 @@
         if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
     });
 
-    // 4. Sistema Toast UI
+    // 3. Sistema Toast UI (Sin alerts)
     function showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -270,16 +272,16 @@
         }, 4000);
     }
 
-    // 3. UX: Enter Key Handler
+    // 2. UX: Enter Key Handler
     function handleEnter(e, callback) {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
             callback();
         }
     }
 
     // BASE DE DATOS (Limpieza Master)
-    const dbKey = 'sgf_cloud_db_v11';
+    const dbKey = 'sgf_cloud_db_v12';
     let defaultData = {
         usuarios: [
             { u: "admin", p: "admin", t: "E-SYS-NODE-20991231-ROOTKEY", estado: "LIBRE", token_orden: "" },
@@ -317,7 +319,6 @@
             document.getElementById('status-section').style.display = 'block';
             document.getElementById('display-user').innerText = "Sesión: " + currentUser.u;
             
-            // 2. Liberación Automática si el token cambió (Resolución de auditoría)
             if (currentUser.estado === "PENDIENTE" && currentUser.token_orden !== currentUser.t) {
                 currentUser.estado = "LIBRE";
                 saveDB();
@@ -361,7 +362,6 @@
                 border.style.borderTop = "4px solid var(--danger)";
             }
 
-            // 1. Lógica de Trámite Inteligente
             const btnRenovar = document.getElementById('btn-tramite-renovar');
             const btnActualizar = document.getElementById('btn-tramite-actualizar');
             
@@ -375,7 +375,7 @@
         }
     }
 
-    // 2. Estado de Carga Persistente
+    // 4. Estado de Carga Persistente
     function verificarEstadoAuditoria() {
         if (currentUser && currentUser.estado === "PENDIENTE") {
             document.getElementById('form-inner').style.display = 'none';
@@ -401,7 +401,7 @@
     const payData = {
         'banco': '<b>Transferencia Bancaria Nacional</b><br>Banco de Venezuela (0102)<br>Cuenta: 0102-XXXX-XXXX-XXXX-XXXX<br>RIF: J-XXXXXXXX-X<br>A nombre de: SGF Cloud Services C.A.',
         'binance': '<b>Binance Pay / USDT (TRC20)</b><br>Red: Tron (TRC20)<br>Wallet: TYPxxxxxxxxxxxxxxxxxxxxxxxxxxxxx99<br>Pay ID: 123456789',
-        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará en el Sistema Central. Indique un número de autorización o memo en el campo de referencia si aplica.'
+        'acuerdo': '<b>Acuerdo Directo</b><br>La validación se realizará en el Servicio de Validación. Indique un número de autorización o memo en el campo de referencia si aplica.'
     };
 
     function seleccionarPago(btn, tipo) {
@@ -418,13 +418,21 @@
         navigator.clipboard.writeText(currentUser.t).then(() => showToast("Llave copiada exitosamente.", "success"));
     }
 
+    // 1. Botón de Retorno Inteligente
     function abrirConfiguracion() {
         document.getElementById('force-reset').style.display = 'flex';
+        const btnVolver = document.getElementById('btn-volver');
+        
+        // Excepción: Si es admin por defecto, se oculta el botón Volver
+        if (!currentUser || (currentUser.u === 'admin' && currentUser.p === 'admin')) {
+            btnVolver.style.display = 'none';
+        } else {
+            btnVolver.style.display = 'block';
+        }
     }
 
     function cerrarConfiguracion() {
-        // Solo permite cerrar si no es el admin por defecto
-        if (currentUser.u === 'admin' && currentUser.p === 'admin') {
+        if (currentUser && currentUser.u === 'admin' && currentUser.p === 'admin') {
             showToast("Debe establecer credenciales privadas por seguridad.", "error");
             return;
         }
@@ -434,7 +442,7 @@
     function iniciarLogoutSeguro() {
         if (currentUser && currentUser.u === 'admin' && currentUser.p === 'admin') {
             showToast("Por seguridad, establezca nuevas credenciales antes de salir.", "info");
-            document.getElementById('force-reset').style.display = 'flex';
+            abrirConfiguracion();
         } else {
             location.reload();
         }
@@ -472,10 +480,9 @@
 
         if(!r && pago !== "acuerdo") { showToast("Indique la referencia o comprobante del pago.", "error"); return; }
 
-        // 2. Persistencia en Pendiente
         const userIndex = sgfConfig.usuarios.findIndex(usr => usr.u === currentUser.u);
         sgfConfig.usuarios[userIndex].estado = "PENDIENTE";
-        sgfConfig.usuarios[userIndex].token_orden = currentUser.t; // Guardamos el token actual para comparar luego
+        sgfConfig.usuarios[userIndex].token_orden = currentUser.t;
         currentUser.estado = "PENDIENTE";
         currentUser.token_orden = currentUser.t;
 
