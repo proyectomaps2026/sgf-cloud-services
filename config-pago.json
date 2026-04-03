@@ -4,11 +4,11 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "AUDITANDO",
-            "vencimiento": "2026-05-03",
+            "estado": "LIBRE",
+            "vencimiento": "2026-07-02",
             "u": "alcaldia",
             "p": "admin",
-            "t": "SGF-ALCA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNS0wMw"
+            "t": "SGF-ALCA-2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg-MjAyNi0wNy0wMg"
         }
     ],
     "ordenes": [
