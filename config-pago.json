@@ -12,12 +12,22 @@
         {
             "user": "alcaldia",
             "id": "ID-ALCALDIA-2026",
-            "estado": "LIBRE",
+            "estado": "AUDITANDO",
             "vencimiento": "2027-04-03",
             "u": "alcaldia",
             "p": "admin",
             "t": "SGF-ALCA-2027-YWXJYWXK"
         }
     ],
-    "ordenes": []
+    "ordenes": [
+        {
+            "id": "ORD-702563",
+            "usuario": "alcaldia",
+            "tramite": "Renovar Licencia Vencida",
+            "metodo": "acuerdo",
+            "referencia": "N/A",
+            "fecha": "2026-04-03T20:27:47.147Z",
+            "estado": "Pendiente"
+        }
+    ]
 }
