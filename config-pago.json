@@ -1,15 +1,5 @@
 {
     "cloud_access": "2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg",
-    "usuarios": [
-        {
-            "user": "admin",
-            "id": "ID-ADMIN-2026",
-            "estado": "LIBRE",
-            "vencimiento": "2026-05-04",
-            "u": "admin",
-            "p": "admin",
-            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
-        }
-    ],
+    "usuarios": [],
     "ordenes": []
 }
