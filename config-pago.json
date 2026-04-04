@@ -1,5 +1,15 @@
 {
     "cloud_access": "2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg",
-    "usuarios": [],
+    "usuarios": [
+        {
+            "user": "dvd",
+            "id": "ID-DVD-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-04",
+            "u": "dvd",
+            "p": "admin",
+            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
+        }
+    ],
     "ordenes": []
 }
