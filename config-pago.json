@@ -18,6 +18,15 @@
             "u": "admin",
             "p": "admin",
             "t": "SGF-RESET-REQUIRED"
+        },
+        {
+            "user": "yo",
+            "id": "ID-YO-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2026-05-05",
+            "u": "yo",
+            "p": "admin",
+            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
         }
     ],
     "ordenes": []
