@@ -1,14 +1,23 @@
 {
-    "cloud_access": "2s21Q0kQvQkAUzPCOsngpLK0DcnFnLOsHfK4_phg",
+    "cloud_access": "TjEM54cv3vhcBMJqTvltrio2oxRj5ItD0wvG_phg",
     "usuarios": [
         {
-            "user": "dvd",
+            "user": "admin",
             "id": "ID-DVD-2026",
             "estado": "LIBRE",
-            "vencimiento": "2026-05-04",
-            "u": "dvd",
+            "vencimiento": "2000-01-01",
+            "u": "admin",
             "p": "admin",
-            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
+            "t": "SGF-RESET-REQUIRED"
+        },
+        {
+            "user": "admin",
+            "id": "ID-YO-2026",
+            "estado": "LIBRE",
+            "vencimiento": "2000-01-01",
+            "u": "admin",
+            "p": "admin",
+            "t": "SGF-RESET-REQUIRED"
         }
     ],
     "ordenes": []
