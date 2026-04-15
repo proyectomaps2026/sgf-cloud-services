@@ -1,33 +1,5 @@
 {
-    "cloud_access": "TjEM54cv3vhcBMJqTvltrio2oxRj5ItD0wvG_phg",
-    "usuarios": [
-        {
-            "user": "admin",
-            "id": "ID-DVD-2026",
-            "estado": "LIBRE",
-            "vencimiento": "2000-01-01",
-            "u": "admin",
-            "p": "admin",
-            "t": "SGF-RESET-REQUIRED"
-        },
-        {
-            "user": "admin",
-            "id": "ID-YO-2026",
-            "estado": "LIBRE",
-            "vencimiento": "2000-01-01",
-            "u": "admin",
-            "p": "admin",
-            "t": "SGF-RESET-REQUIRED"
-        },
-        {
-            "user": "yo",
-            "id": "ID-YO-2026",
-            "estado": "LIBRE",
-            "vencimiento": "2026-05-05",
-            "u": "yo",
-            "p": "admin",
-            "t": "REQUIERE_NUEVA_LICENCIA_MANUAL"
-        }
-    ],
+    "cloud_access": "KVQtz1gTWRxxtlpla0Lbsgu8WGoHXlquiy3H_phg",
+    "usuarios": [],
     "ordenes": []
 }
